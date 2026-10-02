@@ -40,7 +40,7 @@ CATEGORIA = {
     "ligamentaria": "Reconstrucción de LCA",
     "meniscal": "Meniscectomía parcial",
     "artroplastia": "Prótesis total de rodilla (PTR)",
-    "fractura": "Fractura de meseta tibial: osteosíntesis",
+    "fractura": "Fractura Platillos Tibiales",
     "aseo": "Toilette articular por infección",
     "condral": "Condroplastia / regularización",
     "osteotomia": "Osteotomía tibial alta (HTO)",
@@ -56,13 +56,12 @@ REGLAS = [
     (r"\baseo\b|cambio de vac|toilette|lavado", "Toilette articular por infección", "ok"),
     (r"revision.*(lca|ligament)", "Revisión de reconstrucción de LCA", "ok"),
     (r"artrolisis|artrofibrosis|rigidez|\bmba\b", "Artrofibrosis: liberación artroscópica", "ok"),
-    (r"microfx|microfractura", "Microfracturas", "ok"),
     (r"reinsercion con anclas|anclas|avulsiva|espinas tibiales",
-     "Otro (especificar en notas)", "dudoso"),
-    (r"periprotesica", "Fractura supracondílea femoral: osteosíntesis", "dudoso"),
-    (r"platillos|meseta", "Fractura de meseta tibial: osteosíntesis", "ok"),
-    (r"\bots\b|osteosintesis|tornillos canulados", "Fractura de meseta tibial: osteosíntesis", "dudoso"),
-    (r"red \+|reduccion", "Fractura de meseta tibial: osteosíntesis", "dudoso"),
+     "Fractura Avulsiva Espinas Tibiales LCA / LCP", "ok"),
+    (r"periprotesica", "Fractura Periprotésica", "ok"),
+    (r"platillos|meseta", "Fractura Platillos Tibiales", "ok"),
+    (r"\bots\b|osteosintesis|tornillos canulados", "Fractura Platillos Tibiales", "dudoso"),
+    (r"red \+|reduccion", "Fractura Platillos Tibiales", "dudoso"),
     (r"ttr|fulkerson|transposicion.*tuberosidad|elmslie",
      "Osteotomía de tuberosidad tibial (Fulkerson / Elmslie)", "ok"),
     (r"trocleoplastia", "Trocleoplastia", "ok"),
@@ -74,8 +73,15 @@ REGLAS = [
     (r"\bptr\b|protesis total|artroplastia total|\batr\b|rodilla total",
      "Prótesis total de rodilla (PTR)", "ok"),
     (r"rlpfm|mpfl|lpfm", "Estabilización de rótula (MPFL)", "ok"),
-    (r"reinsercion|sutura.*(menisc|mm|ml|raiz)|meniscoresis|all.?in.?side|dentro fuera|fuera dentro|tallado",
+    # Después de rótula: "RLPFM + MicroFx aumentado" es una plástica con aumento,
+    # no un caso de microfracturas.
+    (r"microfx|microfractura", "Microfracturas", "ok"),
+    # La reconstrucción de LCA es el procedimiento mayor: si el caso además tuvo
+    # gesto meniscal, el menisco va como asociado y no como principal.
+    (r"rlca|ligamentoplastia|reconstruccion.*lca|plastia.*lca", "Reconstrucción de LCA", "ok"),
+    (r"reinsercion.*(menisc|raiz|mm|ml)|sutura.*(menisc|mm|ml|raiz)|meniscoresis|all.?in.?side|dentro fuera|fuera dentro|tallado",
      "Reparación meniscal (sutura)", "ok"),
+    (r"reinsercion", "Otro (especificar en notas)", "dudoso"),
     (r"menisectomia subtotal|meniscectomia subtotal", "Meniscectomía subtotal/total", "ok"),
     (r"\bmap\b|menisectomia|meniscectomia|asa de balde", "Meniscectomía parcial", "ok"),
     (r"quiste", "Bursectomía / quiste de Baker", "ok"),
@@ -83,14 +89,14 @@ REGLAS = [
     (r"tendinosis|tendon patelar|tendon rotuliano|cuadricipital",
      "Tendón cuadricipital o rotuliano: reparación", "ok"),
     (r"reseccion|condrop|condral", "Condroplastia / regularización", "ok"),
-    (r"rlca|ligamentoplastia|reconstruccion.*lca|plastia.*lca", "Reconstrucción de LCA", "ok"),
     (r"artroscopia dg|artroscopia diagnostica|\bdg\b|diagnostica", "Artroscopia diagnóstica", "ok"),
 ]
 
 # Gestos que se agregan como procedimientos asociados cuando aparecen junto a otro principal.
 ASOCIADOS = [
-    (r"\btea\b|\blet\b|tenodesis|esquina posterolateral", "Laxitud multiligamentaria: tenodesis"),
-    (r"reinsercion|sutura|meniscoresis|all.?in.?side|dentro fuera|fuera dentro|tallado|raiz",
+    (r"\btea\b|\blet\b|tenodesis|esquina posterolateral",
+     "Tenodesis extraarticular lateral (LET)"),
+    (r"reinsercion.*(menisc|raiz|mm|ml)|sutura|meniscoresis|all.?in.?side|dentro fuera|fuera dentro|tallado|raiz",
      "Reparación meniscal (sutura)"),
     (r"\bmap\b|menisectomia|meniscectomia", "Meniscectomía parcial"),
     (r"microfx|microfractura", "Microfracturas"),
@@ -104,6 +110,21 @@ INJERTO = [
     (r"\bhth\b", "Autoinjerto HTH (hueso-tendón-hueso)"),
     (r"\bstg\b|isquiotibial", "Autoinjerto STG (isquiotibiales)"),
     (r"\balo\b|aloinjerto", "Aloinjerto"),
+]
+
+# Campos estructurados del formulario actual (el form los muestra como select,
+# así que los valores tienen que coincidir EXACTAMENTE con las opciones).
+INJERTO_APP = [
+    (r"cuadricipital", "Tendón cuadricipital"),
+    (r"\bhth\b|hueso.?tendon|tendon rotuliano", "Tendón rotuliano (HTH)"),
+    (r"\bstg\b|isquiotibial|semitendinoso|gracilis", "Isquiotibiales"),
+    (r"\balo\b|aloinjerto", "Aloinjerto"),
+]
+
+TECNICA_APP = [
+    (r"all.?in.?side|todo dentro", "All-inside"),
+    (r"dentro fuera|inside.?out", "Inside-out"),
+    (r"fuera dentro|outside.?in", "Outside-in"),
 ]
 
 # Diagnóstico inferido del procedimiento cuando el formulario viejo no lo registraba.
@@ -148,10 +169,25 @@ DX_NORMALIZADO = [
     (r"artrosis patelofemoral|oa pf|artrosis pf", "Artrosis patelofemoral"),
     (r"condral", "Lesión condral"),
     (r"\blcm\b", "Lesión del LCM"),
+    (r"avulsiv|espinas tibiales", "Fractura por avulsión"),
+    (r"rotula", "Fractura de rótula"),
     (r"rotura.*lca|re rotura lca|\brlca\b", "Rotura de LCA"),
     (r"fractura|\bfx\b", "Fractura"),
     (r"menisc|balde|discoideo|radial|degenerativa|\bmm\b|\bml\b|\bme\b", "Lesión meniscal"),
 ]
+
+# El texto del procedimiento a veces es ambiguo ("Reinsercion", "Red + OTS").
+# Cuando el procedimiento queda genérico o sin mapear, el diagnóstico lo define.
+DX_A_PROCEDIMIENTO = [
+    (r"por avulsion|avulsiva", "Fractura Avulsiva Espinas Tibiales LCA / LCP"),
+    (r"fractura de rotula|fx rotula", "Fractura de Rótula"),
+    (r"\blcm\b", "Reparación / reconstrucción de LCM"),
+]
+
+PROCEDIMIENTOS_AMBIGUOS = {"", "Otro (especificar en notas)", "Fractura Platillos Tibiales"}
+
+# "Otro" es un marcador de "no identificado", no un procedimiento: nunca va como asociado.
+SIN_PROCEDIMIENTO = "Otro (especificar en notas)"
 
 # Las 13 filas del formulario rico: columna -> (etiqueta, tabla de traducción)
 RICAS = [
@@ -160,10 +196,10 @@ RICAS = [
     (8, "Condral y osteotomías", {}),
     (5, "Gesto ligamentario", {"rlca primario": "Reconstrucción de LCA",
                                "rlpfm": "Estabilización de rótula (MPFL)",
-                               "reinsercion con anclas": "Otro (especificar en notas)"}),
+                               "reinsercion con anclas": "Fractura Avulsiva Espinas Tibiales LCA / LCP"}),
     (11, "Trauma / infección / otros", {"sinovectomia": "Sinovectomía (artroscópica/abierta)",
-                                        "reinsercion espinas tibiales": "Otro (especificar en notas)",
-                                        "reduccion + ots platillos tibiales": "Fractura de meseta tibial: osteosíntesis"}),
+                                        "reinsercion espinas tibiales": "Fractura Avulsiva Espinas Tibiales LCA / LCP",
+                                        "reduccion + ots platillos tibiales": "Fractura Platillos Tibiales"}),
     (7, "Gesto meniscal", {"sutura meniscal all-inside": "Reparación meniscal (sutura)"}),
 ]
 
@@ -236,6 +272,18 @@ def diagnostico_inferido(tipo, procedimiento, croquis):
     return ""
 
 
+def procedimiento_por_diagnostico(principal, diagnostico):
+    """Corrige el procedimiento cuando quedó ambiguo y el diagnóstico lo define.
+    Ej.: "Reinsercion" + "Lesión del LCM" -> Reparación / reconstrucción de LCM."""
+    if principal not in PROCEDIMIENTOS_AMBIGUOS:
+        return principal
+    t = norm(diagnostico)
+    for pat, proc in DX_A_PROCEDIMIENTO:
+        if re.search(pat, t):
+            return proc
+    return principal
+
+
 def normalizar_diagnostico(texto):
     """Lleva el diagnóstico al vocabulario controlado. Devuelve (canónico, cambió)."""
     original = (texto or "").strip()
@@ -255,6 +303,25 @@ def injerto_de(valor):
         if re.search(pat, t):
             return nombre
     return valor.strip()
+
+
+def injerto_app(texto):
+    """Tipo de injerto en los valores exactos del select `injertoLca` de la app."""
+    t = norm(texto)
+    for pat, valor in INJERTO_APP:
+        if re.search(pat, t):
+            return valor
+    return ""
+
+
+def tecnica_app(texto):
+    """Técnica de sutura meniscal en los valores del select `tecnicaMeniscal`."""
+    t = norm(texto)
+    hallados = [v for pat, v in TECNICA_APP if re.search(pat, t)]
+    unicos = list(dict.fromkeys(hallados))          # sin repetir, conservando el orden
+    if len(unicos) > 1:
+        return "Mixta"                              # menciona más de una técnica
+    return unicos[0] if unicos else ""
 
 
 def rol_de(v):
@@ -323,6 +390,8 @@ def main():
             injerto = injerto_de(f[6])
             pasos, aprendi = f[13].strip(), f[14].strip()
             crudo_proc = ""
+            texto_clinico = " ".join([f[6].strip(), f[7].strip(), f[8].strip(),
+                                      f[9].strip(), f[11].strip()])
         else:
             stats["simples"] += 1
             fecha = fecha_iso(f[16])
@@ -333,6 +402,16 @@ def main():
             principal, asociados, confianza, injerto = clasificar(crudo_proc, f[18])
             detalle = []
             pasos, aprendi = f[21].strip(), f[22].strip()
+            texto_clinico = crudo_proc
+
+        # Campos estructurados que el formulario actual muestra como select.
+        injerto_lca = injerto_app(texto_clinico)
+        tecnica_men = tecnica_app(texto_clinico)
+        if injerto_lca:
+            stats["injerto_lca"] += 1
+            injerto = ""        # el injerto pasó al campo estructurado: no se duplica
+        if tecnica_men:
+            stats["tecnica_meniscal"] += 1
 
         if f[17].strip():
             stats["rut_descartados"] += 1   # dato identificatorio: NO se copia
@@ -352,16 +431,27 @@ def main():
             else:
                 sin_diagnostico.append((n, fecha, (f[18].strip() + " · " + crudo_proc).strip(" ·")))
 
-        if not principal:
-            principal = "Otro (especificar en notas)"
-            avisos.append("procedimiento sin mapear")
-            sin_procedimiento.append((n, crudo_proc or f[18]))
-
         # Unificación del vocabulario de diagnósticos (el texto original va a las notas)
         dx_original = diagnostico
         diagnostico, dx_cambio = normalizar_diagnostico(diagnostico)
         if dx_cambio:
             normalizados.append((n, dx_original, diagnostico))
+
+        # El diagnóstico desambigua el procedimiento cuando el texto es genérico:
+        # "Red + OTS" en una fractura de rótula, o "Reinsercion" de un LCM.
+        # Va ANTES de asignar "Otro", si no el caso quedaría marcado como sin mapear.
+        refinado = procedimiento_por_diagnostico(principal, diagnostico)
+        if refinado != principal:
+            if "procedimiento reasignado por el diagnóstico" not in avisos:
+                avisos.append("procedimiento reasignado por el diagnóstico")
+            principal = refinado
+
+        if not principal:
+            principal = "Otro (especificar en notas)"
+            avisos.append("procedimiento sin mapear")
+            sin_procedimiento.append((n, crudo_proc or f[18]))
+            if "procedimiento reasignado por el diagnóstico" not in avisos:
+                avisos.append("procedimiento reasignado por el diagnóstico")
 
         if confianza == "dudoso":
             dudosos.append((n, fecha, crudo_proc or " / ".join(detalle), principal))
@@ -381,9 +471,12 @@ def main():
         if aprendi:
             notas.append(f"Aprendizaje: {aprendi}")
 
-        tags = ["importado"]
+        # Etiquetas: la app ahora genera las clínicas sola (autoTags) a partir del
+        # procedimiento, el injerto y la técnica. Como manuales quedan sólo las que
+        # no puede deducir: el origen y la clasificación que traía el formulario viejo.
+        manual_tags = ["importado"]
         if f[18].strip() and not es_rica:
-            tags.append(norm(f[18].strip()))
+            manual_tags.append(norm(f[18].strip()))
 
         casos.append({
             "id": id_estable(f[0], f[16], f[18], f[19], f[20], f[23]),
@@ -401,11 +494,17 @@ def main():
             "cirujano": "",
             "rol": rol,
             "procedimientoPrincipal": principal,
-            "procedimientosAsociados": asociados,
+            "procedimientosAsociados": [p for p in asociados if p != SIN_PROCEDIMIENTO],
             "abordaje": "",
             "anestesia": "",
             "hallazgos": "",
             "implantes": injerto,
+            "injertoLca": injerto_lca,
+            "tecnicaMeniscal": tecnica_men,
+            # Sólo aplican a lesiones multiligamentarias; la planilla vieja no
+            # registra ninguna, así que quedan vacíos (no se inventan).
+            "patronMultiligamentario": "",
+            "clasificacionMultiligamentaria": "",
             "duracionMin": None,
             "torniquete": False,
             "torniqueteMin": None,
@@ -422,7 +521,10 @@ def main():
             "presentadoEnAteneo": False,
             "publicable": False,
             "notas": "\n".join(notas),
-            "tags": tags,
+            "tags": manual_tags,
+            "manualTags": manual_tags,
+            "autoTags": [],              # la app las completa al normalizar
+            "excludedAutoTags": [],
             "creado": marca or (fecha + "T12:00:00" if fecha else ""),
             "actualizado": marca or (fecha + "T12:00:00" if fecha else ""),
             "_avisos": avisos,           # sólo para el reporte
@@ -478,6 +580,14 @@ def main():
     for v, n in Counter(c["diagnostico"] for c in casos).most_common():
         print(f"  {n:4} x  {v or '(vacío)'}")
 
+    print("\nCAMPOS ESTRUCTURADOS DEL FORMULARIO ACTUAL")
+    print(f"  injertoLca       : {stats['injerto_lca']} casos")
+    for v, n in Counter(c["injertoLca"] for c in casos if c["injertoLca"]).most_common():
+        print(f"      {n:4} x  {v}")
+    print(f"  tecnicaMeniscal  : {stats['tecnica_meniscal']} casos")
+    for v, n in Counter(c["tecnicaMeniscal"] for c in casos if c["tecnicaMeniscal"]).most_common():
+        print(f"      {n:4} x  {v}")
+
     if dudosos:
         print(f"\nMAPEO DUDOSO — CONVIENE REVISAR ({len(dudosos)})")
         for n, fecha, tex, proc in dudosos:
@@ -501,7 +611,7 @@ def main():
             "Reconstrucción de LCA": 30,
             "Reparación meniscal (sutura)": 20,
             "Prótesis total de rodilla (PTR)": 20,
-            "Fractura de meseta tibial: osteosíntesis": 10,
+            "Fractura Platillos Tibiales": 10,
         },
         "casos": casos,
     }
