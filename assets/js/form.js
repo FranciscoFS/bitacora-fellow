@@ -43,9 +43,17 @@ window.BF = window.BF || {};
     const options = current && !matches.includes(current) ? [current, ...matches] : matches;
     fillSelect(form.elements.procedimientoPrincipal, options, 'Elegir procedimiento');
     $('#principalSelected').innerHTML = current ? `<span class="selection-check" aria-hidden="true">✓</span><span><small>Seleccionado</small><strong>${esc(current)}</strong></span>` : '<span class="selection-check" aria-hidden="true">—</span><span>Selecciona una intervención del catálogo</span>';
+    renderTraumaContext();
     renderCategories('#principalCategories', principalArea);
     $('#principalOptions').innerHTML = matches.length ? matches.slice(0, 6).map((p) => optionMarkup(p, p === current, 'data-principal')).join('') : '<p class="picker-empty">No encontramos coincidencias. Prueba otra búsqueda o área.</p>';
     $('#principalCount').textContent = `${matches.length} procedimiento(s)${matches.length > 6 ? ' · Se muestran 6. Filtra por área o nombre para ver más.' : ''}`;
+  }
+
+  function renderTraumaContext() {
+    const current = form.elements.procedimientoPrincipal.value;
+    const paired = ['Reducción', 'Osteosíntesis', 'Reducción y osteosíntesis'].includes(current);
+    $('#traumaProcedureContext').hidden = !paired;
+    $('#traumaProcedureContext').textContent = paired ? form.elements.diagnostico.value.trim() ? `${current} · ${form.elements.diagnostico.value.trim()}` : 'Escribe el diagnóstico para completar este caso de Trauma.' : '';
   }
 
   function renderChips() {
@@ -98,6 +106,7 @@ window.BF = window.BF || {};
   }
 
   function conditionals() {
+    renderTraumaContext();
     const multiligamentary = C.isMultiligamentaryDiagnosis(form.elements.diagnostico.value);
     $('#multiligamentaryDetails').hidden = !multiligamentary;
     for (const key of ['patronMultiligamentario', 'clasificacionMultiligamentaria']) form.elements[key].disabled = !multiligamentary;

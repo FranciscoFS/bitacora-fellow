@@ -88,6 +88,9 @@ BF.CONFIG = {
     'Implante de matriz de colágeno',
     // Trauma
     'Fractura Fémur Distal',
+    'Reducción',
+    'Osteosíntesis',
+    'Reducción y osteosíntesis',
     'Fractura Periprotésica',
     'Fractura Platillos Tibiales',
     'Fractura de Rótula',
@@ -182,7 +185,7 @@ BF.CONFIG.personalStepsFor = (c) => {
   if (/reparacion meniscal/.test(text)) steps.push('Sutura meniscal');
   if (/reconstruccion/.test(text)) steps.push('Preparación del injerto', 'Preparación de túneles', 'Fijación del injerto');
   if (/\blet\b/.test(text)) steps.push('Tenodesis extraarticular lateral (LET)');
-  if (/fractura|luxacion/.test(text)) steps.push('Reducción');
+  if (/fractura|luxacion|reduccion/.test(text)) steps.push('Reducción');
   if (/fractura|osteosintesis/.test(text)) steps.push('Osteosíntesis');
   if (/protesis|recambio|artroplastia/.test(text)) steps.push('Preparación ósea', 'Colocación de componentes');
   if (/osteotomia/.test(text)) steps.push('Osteotomía', 'Fijación');

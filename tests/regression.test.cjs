@@ -32,6 +32,20 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Reducción y osteosíntesis son procedimientos de Trauma y se vinculan al diagnóstico sin cambiarlo', () => {
+  const { context, S, E } = app(); const C = context.BF.CONFIG;
+  for (const p of ['Reducción', 'Osteosíntesis', 'Reducción y osteosíntesis']) {
+    assert.ok(C.PROCEDIMIENTOS.includes(p));
+    assert.equal(C.procedureArea(p), 'Trauma');
+  }
+  S.add(caso('trauma-pair', { diagnostico: 'Fractura Platillos Tibiales', procedimientoPrincipal: 'Reducción y osteosíntesis' }));
+  const steps = C.personalStepsFor(S.get('trauma-pair'));
+  assert.ok(steps.includes('Reducción')); assert.ok(steps.includes('Osteosíntesis'));
+  const target = app(); target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
+  assert.equal(target.S.get('trauma-pair').diagnostico, 'Fractura Platillos Tibiales');
+  assert.equal(target.S.get('trauma-pair').procedimientoPrincipal, 'Reducción y osteosíntesis');
+});
+
 test('Las opciones de participación dependen de los procedimientos sin marcar pasos automáticamente', () => {
   const { context, S } = app(); const C = context.BF.CONFIG;
   const combined = C.personalStepsFor(caso('combo', { abordaje: 'Artroscópico', procedimientosAsociados: ['Reparación meniscal (sutura)'] }));
