@@ -35,6 +35,7 @@ window.BF = window.BF || {};
     if (Array.isArray(c.procedimientosAsociados) && c.procedimientosAsociados.some((p) => C.procedureName(p) !== p)) c.procedimientosAsociadosAnteriores = c.procedimientosAsociadosAnteriores || [...c.procedimientosAsociados];
     c.procedimientosAsociados = Array.isArray(c.procedimientosAsociados) ? [...new Set(c.procedimientosAsociados.filter(Boolean).map(C.procedureName))].filter((p) => p !== c.procedimientoPrincipal) : [];
     c.tags = Array.isArray(c.tags) ? c.tags.filter(Boolean) : [];
+    if (Array.isArray(c.autoTags)) Object.assign(c, C.withAutoTags(c));
     c.seguimiento = Array.isArray(c.seguimiento) ? c.seguimiento.filter(Boolean).map(normalizeFollowup) : [];
     c.creado = c.creado || nowISO();
     c.actualizado = c.actualizado || c.creado;

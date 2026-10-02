@@ -32,6 +32,29 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Las etiquetas automáticas combinan procedimientos y detalles aplicables', () => {
+  const { context } = app(); const C = context.BF.CONFIG;
+  const tags = C.suggestTags(caso('tags', { procedimientosAsociados: ['Reparación meniscal (sutura)', 'Tenodesis extraarticular lateral (LET)'], injertoLca: 'Isquiotibiales', tecnicaMeniscal: 'All inside' }));
+  for (const tag of ['LCA', 'LET', 'Sutura meniscal', 'LCA + LET', 'LCA + sutura meniscal', 'Injerto: Isquiotibiales', 'Técnica meniscal: All inside']) assert.ok(tags.includes(tag));
+  const unrelated = C.suggestTags(caso('other', { procedimientoPrincipal: 'Meniscectomía parcial', injertoLca: 'Isquiotibiales', tecnicaMeniscal: 'All inside', clasificacionMultiligamentaria: 'KD III-M' }));
+  assert.ok(!unrelated.some((t) => /Injerto|Técnica|Schenck/.test(t)));
+});
+
+test('Editar actualiza etiquetas automáticas, conserva las manuales y respeta exclusiones', () => {
+  const { context, S } = app(); const C = context.BF.CONFIG;
+  S.add(C.withAutoTags(caso('tags', { tags: ['Personal', 'lca'], excludedAutoTags: ['Ligamentos'], procedimientosAsociados: ['Tenodesis extraarticular lateral (LET)'] })));
+  assert.equal(S.get('tags').tags.filter((t) => t.toLowerCase() === 'lca').length, 1);
+  assert.ok(!S.get('tags').tags.includes('Ligamentos'));
+  S.update('tags', { procedimientoPrincipal: 'Meniscectomía parcial', procedimientosAsociados: [] });
+  assert.ok(S.get('tags').tags.includes('Personal'));
+  assert.ok(S.get('tags').tags.includes('lca'));
+  assert.ok(S.get('tags').tags.includes('Menisco'));
+  assert.ok(!S.get('tags').tags.includes('LET'));
+  const target = app(); target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
+  assert.deepEqual(json(target.S.get('tags').excludedAutoTags), ['Ligamentos']);
+  assert.ok(target.S.get('tags').tags.includes('Personal'));
+});
+
 test('LET reemplaza la etiqueta antigua y conserva los casos existentes', () => {
   const { S, context } = app();
   const old = 'Laxitud multiligamentaria: tenodesis';

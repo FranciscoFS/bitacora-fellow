@@ -165,6 +165,38 @@ BF.CONFIG.procedureObjectives = (objectives) => {
   return normalized;
 };
 
+/* Etiquetas basadas exclusivamente en los datos registrados. */
+BF.CONFIG.suggestTags = (c) => {
+  const procedures = [c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean).map(BF.CONFIG.procedureName);
+  const text = procedures.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const tags = [];
+  const add = (tag) => { if (!tags.includes(tag)) tags.push(tag); };
+  procedures.forEach((p) => { const area = BF.CONFIG.procedureArea(p); if (area !== 'Otros') add(area); });
+  if (/\blca\b/.test(text)) add('LCA');
+  if (/\blcp\b/.test(text)) add('LCP');
+  if (/\blet\b/.test(text)) add('LET');
+  if (/revision|recambio/.test(text)) add('Revisión');
+  if (/reparacion meniscal/.test(text)) add('Sutura meniscal');
+  if (BF.CONFIG.isMultiligamentaryDiagnosis(c.diagnostico) || /multiligament/.test(text)) add('Multiligamentaria');
+  const details = BF.CONFIG.procedureDetailsFor(procedures);
+  if (details.injertoLca && c.injertoLca) add(`Injerto: ${c.injertoLca}`);
+  if (details.tecnicaMeniscal && c.tecnicaMeniscal) add(`Técnica meniscal: ${c.tecnicaMeniscal}`);
+  if (BF.CONFIG.isMultiligamentaryDiagnosis(c.diagnostico) && c.clasificacionMultiligamentaria) add(`Schenck ${c.clasificacionMultiligamentaria}`);
+  if (tags.includes('LCA') && tags.includes('Sutura meniscal')) add('LCA + sutura meniscal');
+  if (tags.includes('LCA') && tags.includes('LET')) add('LCA + LET');
+  return tags;
+};
+BF.CONFIG.withAutoTags = (c) => {
+  const key = (s) => String(s).trim().toLocaleLowerCase();
+  const previous = new Set((c.autoTags || []).map(key));
+  const manual = Array.isArray(c.manualTags) ? c.manualTags : (c.tags || []).filter((t) => !previous.has(key(t)));
+  const excluded = new Set((c.excludedAutoTags || []).map(key));
+  const autoTags = BF.CONFIG.suggestTags(c).filter((t) => !excluded.has(key(t)));
+  const seen = new Set();
+  const tags = [...manual, ...autoTags].filter((t) => { const k = key(t); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+  return { ...c, tags, autoTags, manualTags: manual };
+};
+
 /* Alias cortos, por comodidad al leer el código */
 BF.ROLES = BF.CONFIG.ROLES;
 BF.ROLES_CIRUJANO = BF.CONFIG.ROLES_CIRUJANO;

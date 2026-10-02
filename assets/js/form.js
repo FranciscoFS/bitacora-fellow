@@ -4,6 +4,7 @@ window.BF = window.BF || {};
   const C = BF.CONFIG, S = BF.store;
   let form, selectedProc = new Set(), editingId = null, baseline = '', dirty = false;
   let legacyDetails = {};
+  let excludedAutoTags = new Set();
   const keepLegacyDetails = (caso = {}) => ({
     seguimiento: caso.seguimiento || [], presentadoEnAteneo: !!caso.presentadoEnAteneo, publicable: !!caso.publicable,
     internacionDias: caso.internacionDias ?? null, uti: !!caso.uti,
@@ -62,8 +63,11 @@ window.BF = window.BF || {};
     const caso = { ...legacyDetails };
     for (const field of fields()) caso[field.name] = field.type === 'checkbox' ? field.checked : field.value;
     caso.tags = String(caso.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+    caso.manualTags = [...caso.tags];
     caso.procedimientosAsociados = Array.from(selectedProc);
-    return caso;
+    caso.autoTags = [];
+    caso.excludedAutoTags = [...excludedAutoTags];
+    return C.withAutoTags(caso);
   }
 
   function fingerprint() {
@@ -80,7 +84,7 @@ window.BF = window.BF || {};
     if (!C.isMultiligamentaryDiagnosis(c.diagnostico)) { c.patronMultiligamentario = ''; c.clasificacionMultiligamentaria = ''; }
     if (!c.torniquete) c.torniqueteMin = null;
     if (!c.complicacionIntraop) c.complicacionIntraopDetalle = '';
-    return c;
+    return C.withAutoTags(c);
   }
 
   function updateSections() {
@@ -106,6 +110,15 @@ window.BF = window.BF || {};
       container.hidden = !visible;
       $$('input,select,textarea', container).forEach((f) => { f.disabled = !visible; });
     });
+    renderTags();
+  }
+
+  function renderTags() {
+    const suggested = C.suggestTags(capture());
+    $('#autoTagChips').innerHTML = suggested.length ? suggested.map((tag) => {
+      const included = !excludedAutoTags.has(tag);
+      return `<button type="button" class="chip${included ? ' on' : ''}" data-auto-tag="${esc(tag)}" aria-pressed="${included}" aria-label="${included ? 'Quitar' : 'Incluir'} etiqueta ${esc(tag)}">${esc(tag)} <span aria-hidden="true">${included ? '×' : '+'}</span></button>`;
+    }).join('') : '<span class="muted small">Aparecerán al elegir el diagnóstico y los procedimientos.</span>';
   }
 
   function persistDraft() {
@@ -138,11 +151,13 @@ window.BF = window.BF || {};
   function write(caso) {
     caso = { ...caso, procedimientoPrincipal: C.procedureName(caso.procedimientoPrincipal), procedimientosAsociados: [...new Set((caso.procedimientosAsociados || []).map(C.procedureName))] };
     legacyDetails = keepLegacyDetails(caso);
+    excludedAutoTags = new Set(caso.excludedAutoTags || []);
     for (const field of fields()) {
       if (field.type === 'checkbox') field.checked = !!caso[field.name];
       else field.value = caso[field.name] ?? '';
     }
-    form.elements.tags.value = (caso.tags || []).join(', ');
+    const auto = new Set((caso.autoTags || []).map((t) => t.toLocaleLowerCase()));
+    form.elements.tags.value = (Array.isArray(caso.manualTags) ? caso.manualTags : (caso.tags || []).filter((t) => !auto.has(t.toLocaleLowerCase()))).join(', ');
     principalArea = associatedArea = 'Todas'; renderDiagnosis();
     $('#principalSearch').value = ''; $('#associatedSearch').value = '';
     if (caso.procedimientoPrincipal && !Array.from(form.elements.procedimientoPrincipal.options).some((o) => o.value === caso.procedimientoPrincipal)) {
@@ -163,6 +178,7 @@ window.BF = window.BF || {};
   function resetForm({ keepDate = false, keepSurgeon = false } = {}) {
     const fecha = form.elements.fecha.value, surgeon = form.elements.cirujano.value;
     form.reset(); editingId = null; selectedProc.clear(); legacyDetails = keepLegacyDetails();
+    excludedAutoTags.clear();
     principalArea = associatedArea = 'Todas';
     fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
     form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo();
@@ -245,6 +261,12 @@ window.BF = window.BF || {};
       $('#draftStatus').textContent = 'Borrador recuperado. Complétalo y guarda el caso cuando esté listo.';
     }
     form.addEventListener('submit', (e) => { e.preventDefault(); save(); });
+    $('#autoTagChips').addEventListener('click', (e) => {
+      const button = e.target.closest('[data-auto-tag]'); if (!button) return;
+      const tag = button.dataset.autoTag;
+      excludedAutoTags.has(tag) ? excludedAutoTags.delete(tag) : excludedAutoTags.add(tag);
+      changed();
+    });
     form.addEventListener('input', (e) => { if (e.target.name) changed(); });
     form.addEventListener('change', (e) => {
       if (e.target.name === 'procedimientoPrincipal') renderChips();
