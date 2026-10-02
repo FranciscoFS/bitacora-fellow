@@ -117,6 +117,29 @@ Las metas sugeridas iniciales son un punto de partida editable: 50 artroscopias 
 - **Exportar JSON**: respaldo de casos, metas, criterio de conteo y borrador pendiente, sin credenciales (úsalo antes de borrar algo).
 - **Importar JSON**: valida el archivo y permite fusionar, reemplazar o cancelar. Reemplazar exige escribir **REEMPLAZAR**; cancelar conserva los datos. Si contiene un borrador, ofrece recuperarlo.
 
+### Migrar la planilla vieja (una sola vez)
+
+Los registros anteriores a la app (el CSV exportado del formulario) se convierten al formato nuevo con:
+
+```powershell
+python tools\importar-legado.py
+```
+
+Lee `data/Old_answers.csv` y escribe **`data/bitacora-legado.json`**, listo para cargar con **Ajustes → Importar JSON → Fusionar**. Antes de escribir imprime un reporte: cuántos casos convirtió, cómo los clasificó, y qué quedó dudoso o sin mapear.
+
+Decisiones que toma el conversor y conviene conocer:
+
+- **Roles**: `1er Cirujano` → *Cirujano (supervisado)*, `2do` → *Primer ayudante*, `3er` → *Segundo ayudante*.
+- **Se descartan los RUT / ficha**: son datos identificatorios de pacientes y no entran al JSON.
+- Las dos generaciones del formulario viejo (el simple y el rico) se unifican en un solo esquema.
+- Las **28 categorías de texto libre** se traducen al catálogo de procedimientos de la app; el texto original **no se pierde**: se guarda en las notas del caso.
+- Los `id` son deterministas, así que **volver a correr el script actualiza los casos en vez de duplicarlos**.
+- **Diagnósticos**: el formulario viejo no registraba el diagnóstico en las primeras seis semanas (0% en mayo, 36% en junio, 100% desde julio). El conversor lo **infiere del procedimiento** en esos 27 casos — no se hace una `PTR` sin gonartrosis — y **deja constancia en la nota** de cada uno: *"Diagnóstico inferido del procedimiento: el formulario anterior no lo registraba."* Si preferís que queden vacíos, se borra la tabla `DX_INFERIDO` / `DX_MANUAL` y se vuelve a ejecutar.
+- **Vocabulario de diagnósticos unificado**: el formulario viejo tenía ~60 formas distintas de escribir unos 15 diagnósticos (`Rotura LCA`, `Rlca`, `RLCA`; `Gonartrosis izq`, `OA Valgo`, `Genu Varo`; `Mensico Discoideo`, `Rotura Radial Ml`…). El conversor los lleva al vocabulario controlado de `DX_NORMALIZADO` y **guarda el texto original en las notas** de cada caso: *"Diagnóstico según el registro original: …"*. Sin eso, buscar por diagnóstico no devolvía nada útil.
+- **Combinados**: los diagnósticos múltiples (`RLCA + MM + ML`) se resuelven por la entidad dominante, con el detalle preservado en las notas.
+
+El script es editable: si querés cambiar cómo se traduce un término, se ajusta la tabla `REGLAS` y se vuelve a ejecutar.
+
 ### Varios dispositivos
 
 Carga el mismo token en cada dispositivo. Al abrir la app, cada uno descarga los datos del repositorio y, al guardar un caso, los sube. Si dos dispositivos editan el mismo caso, gana la versión modificada más recientemente (la app avisa y fusiona sola).
@@ -149,6 +172,8 @@ assets/js/bitacora.js      Tabla, búsqueda, ficha de detalle y borrado
 assets/js/dashboard.js     KPIs, filtros y gráficos
 assets/js/export.js        CSV, respaldo JSON y datos de ejemplo
 assets/js/app.js           Navegación, estado de sincronización y ajustes
+tools/importar-legado.py   Conversor de la planilla vieja (CSV) al JSON que importa la app
+data/                      Tus datos: planilla vieja y JSON convertido (fuera del control de versiones)
 ```
 
 ---
