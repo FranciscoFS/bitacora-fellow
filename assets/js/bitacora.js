@@ -73,15 +73,15 @@ window.BF = window.BF || {};
       const complLabel = 'Intraop.';
       const lat = (c.lateralidad || '').charAt(0) || '—';
       return `<tr data-id="${c.id}">
-        <td><button class="code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.codigo)}</button></td>
+        <td class="wrap-cell"><button class="procedure-link code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.procedimientoPrincipal || 'Sin procedimiento')}</button>
+          ${c.procedimientosAsociados.length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}</td>
         <td>${esc(fmtDate(c.fecha))}</td>
         <td><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || '—')}</span></td>
-        <td class="wrap-cell" title="${esc(c.procedimientoPrincipal)}">${esc(c.procedimientoPrincipal || '—')}
-          ${c.procedimientosAsociados.length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}</td>
+        <td class="case-code">${esc(c.codigo)}</td>
         <td>${esc(c.lateralidad || '—')}</td>
         <td>${esc(c.abordaje || '—').replace('Artroscópico + mini-abierto', 'Artro + mini')}</td>
         <td class="num">${c.duracionMin ?? '—'}</td>
-        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="pill good">No</span>'}</td>
+        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="muted">No</span>'}</td>
         <td class="col-actions"><button class="icon-btn" data-act="edit" title="Editar" aria-label="Editar">✎</button></td>
       </tr>`;
     }).join('');
@@ -90,7 +90,7 @@ window.BF = window.BF || {};
     const total = S.all().length;
     $('#tableCount').textContent = total === 0
       ? 'Todavía no hay casos registrados.'
-      : `${rows.length} de ${total} caso(s) · ${S.metrics(rows).duracionTotal} min acumulados`;
+      : `${rows.length} de ${total} ${total === 1 ? 'caso' : 'casos'} · ${S.metrics(rows).duracionTotal} min acumulados`;
     $('#tableEmpty').hidden = rows.length > 0;
     $('#caseTable').hidden = rows.length === 0;
     $('#tableWrap').hidden = rows.length === 0;

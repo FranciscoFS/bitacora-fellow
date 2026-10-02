@@ -98,6 +98,10 @@ window.BF = window.BF || {};
   }
 
   function updateSections() {
+    for (const [selector, count] of [['.associated-picker', selectedProc.size], ['.personal-details', personalSteps.size]]) {
+      const section = $(selector);
+      section.querySelector('summary .optional-label').textContent = count ? `${count} seleccionado${count === 1 ? '' : 's'}` : 'Opcional';
+    }
     $$('.form-section').forEach((section) => {
       const filled = $$('input,select,textarea', section).filter((f) => f.name !== 'codigo' && (f.type === 'checkbox' ? f.checked : f.value !== '')).length;
       const extra = section.querySelector('#procChips') ? selectedProc.size : 0;
@@ -184,6 +188,8 @@ window.BF = window.BF || {};
     }
     renderPrincipal(); selectedProc = new Set(caso.procedimientosAsociados || []); renderChips();
     conditionals(); updateSections();
+    $('.associated-picker').open = selectedProc.size > 0;
+    $('.personal-details').open = personalSteps.size > 0;
   }
 
   function setMeta() {
@@ -204,7 +210,7 @@ window.BF = window.BF || {};
     form.elements.fecha.value = keepDate ? fecha : todayISO();
     if (keepSurgeon) form.elements.cirujano.value = surgeon;
     $('#principalSearch').value = ''; $('#associatedSearch').value = '';
-    $$('.form-section').forEach((s) => { s.open = false; });
+    $$('.form-section, .associated-picker, .personal-details').forEach((s) => { s.open = false; });
     clearInvalid(); renderPrincipal(); renderChips(); renderDiagnosis(); conditionals(); updateSections(); setMeta();
     $('#formMsg').textContent = ''; $('#formMsg').classList.remove('err');
     baseline = fingerprint(); dirty = false;

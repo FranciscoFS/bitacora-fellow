@@ -69,7 +69,7 @@ window.BF = window.BF || {};
 
   function initSettings() {
     loadCfgIntoForm();
-    $('#themeSelect').value = BF.util.store.get('theme', 'system');
+    $('#themeSelect').value = BF.util.store.get('theme', 'light');
     $('#themeSelect').addEventListener('change', () => {
       BF.util.store.set('theme', $('#themeSelect').value);
       document.documentElement.dataset.theme = $('#themeSelect').value;
@@ -159,7 +159,7 @@ window.BF = window.BF || {};
 
   async function boot() {
     if (new URLSearchParams(location.search).get('demo') === '1') C.LS_PREFIX = 'bf.demo.';
-    document.documentElement.dataset.theme = BF.util.store.get('theme', 'system');
+    document.documentElement.dataset.theme = BF.util.store.get('theme', 'light');
     S.loadLocal();
     if (C.LS_PREFIX === 'bf.demo.') {
       S.state.cfg = { ...S.state.cfg, owner: '', repo: '', token: '' };

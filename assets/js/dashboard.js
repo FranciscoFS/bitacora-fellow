@@ -50,14 +50,14 @@ window.BF = window.BF || {};
     $('#kpis').innerHTML = [
       kpi({ label: 'Casos totales', value: m.total, hint: `${m.delAnio} en ${new Date().getFullYear()}` }),
       kpi({ label: 'Como cirujano', value: m.comoCirujano, hint: `${m.pctCirujano}% del total`, tone: 'accent' }),
-      kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
+      kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
       kpi({
         label: 'Complicaciones intraop.', value: m.complicaciones,
         hint: `${m.tasaComplicaciones}% de los casos`,
         tone: m.total ? (m.complicaciones ? 'bad' : 'good') : ''
       }),
       kpi({ label: 'Duración promedio', value: num1(m.duracionPromedio, ' min'), hint: 'promedio de los tiempos registrados' }),
-      kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
+      kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
       kpi({ label: 'Isquemia promedio', value: num1(m.isquemiaPromedio, ' min'), hint: 'casos con torniquete' }),
       kpi({ label: 'Duración mediana', value: num1(m.duracionMediana, ' min'), hint: 'valor central de los tiempos registrados' })
     ].join('');
@@ -151,8 +151,8 @@ window.BF = window.BF || {};
     $('#goalMode').checked = soloCirujano;
 
     $('#goalsSummary').innerHTML = filas.length
-      ? `<b>${cumplidas}</b> de ${filas.length} meta(s) cumplidas · ` +
-        `${base.length} caso(s) computados ${soloCirujano ? 'como cirujano' : 'en cualquier rol'}`
+      ? `<b>${cumplidas}</b> de ${filas.length} ${filas.length === 1 ? 'meta cumplida' : 'metas cumplidas'} · ` +
+        `${base.length} ${base.length === 1 ? 'caso computado' : 'casos computados'} ${soloCirujano ? 'como cirujano' : 'en cualquier rol'}`
       : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
 
     $('#progressList').innerHTML = filas.map((f) => `
@@ -210,8 +210,8 @@ window.BF = window.BF || {};
 
     $('#btnClearFilters').hidden = !hasFilters(f) || vacio;
     $('#dashSubtitle').textContent = hasFilters(f)
-      ? `${casos.length} caso(s) según los filtros aplicados.`
-      : `${S.all().length} caso(s) en total.`;
+      ? `${casos.length} ${casos.length === 1 ? 'caso' : 'casos'} según los filtros aplicados.`
+      : `${S.all().length} ${S.all().length === 1 ? 'caso' : 'casos'} en total.`;
 
     /* Con la bitácora vacía, ocho KPI en cero y cinco gráficos "sin datos" no
        comunican nada: se muestran una guía de arranque y la tarjeta de metas
