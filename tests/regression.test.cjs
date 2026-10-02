@@ -32,6 +32,30 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Trauma usa los nombres del servicio sin desplazar las otras áreas', () => {
+  const { context } = app();
+  const C = context.BF.CONFIG;
+  for (const procedure of ['Fractura Fémur Distal', 'Fractura Periprotésica', 'Fractura Platillos Tibiales', 'Fractura de Rótula', 'Fractura Avulsiva Espinas Tibiales LCA / LCP']) {
+    assert.ok(C.PROCEDIMIENTOS.includes(procedure));
+    assert.equal(C.procedureArea(procedure), 'Trauma');
+  }
+  assert.equal(C.procedureArea('Prótesis total de rodilla (PTR)'), 'Artroplastia');
+  assert.equal(C.procedureArea('Microfracturas'), 'Cartílago');
+  assert.equal(C.procedureArea('Sinovectomía (artroscópica/abierta)'), 'Otros');
+});
+
+test('Los nombres antiguos de Trauma conservan casos y metas sin duplicar procedimientos', () => {
+  const { S, E } = app();
+  const preview = E.previewImport({ casos: [caso('trauma', { procedimientoPrincipal: 'Fractura de meseta tibial: osteosíntesis', procedimientosAsociados: ['Fractura de rótula: osteosíntesis', 'Fractura de Rótula'] })], objetivos: { 'Fractura de meseta tibial: osteosíntesis': 19 } });
+  E.applyImport(preview, 'replace');
+  assert.equal(S.get('trauma').procedimientoPrincipal, 'Fractura Platillos Tibiales');
+  assert.equal(S.get('trauma').procedimientoPrincipalAnterior, 'Fractura de meseta tibial: osteosíntesis');
+  assert.deepEqual(json(S.get('trauma').procedimientosAsociados), ['Fractura de Rótula']);
+  assert.equal(S.getObjetivos()['Fractura Platillos Tibiales'], 19);
+  assert.equal(S.all().length, 1);
+  assert.equal(S.normalize(caso('femur', { procedimientoPrincipal: 'Fractura supracondílea femoral: osteosíntesis' })).procedimientoPrincipal, 'Fractura Fémur Distal');
+});
+
 test('Los datos postoperatorios antiguos se conservan sin contar como complicación intraoperatoria', () => {
   const { S } = app();
   S.add(caso('antiguo', { complicacionPostop: true, complicacionClavienDindo: 'IIIb', internacionDias: 4, profilaxis: 'Dato ficticio' }));

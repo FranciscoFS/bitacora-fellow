@@ -27,9 +27,13 @@ window.BF = window.BF || {};
     const c = Object.assign({}, raw);
     c.id = c.id || uuid();
     for (const f of TEXT_FIELDS) c[f] = c[f] == null ? '' : String(c[f]);
+    const originalProcedure = c.procedimientoPrincipal;
+    c.procedimientoPrincipal = C.procedureName(originalProcedure);
+    if (originalProcedure !== c.procedimientoPrincipal) c.procedimientoPrincipalAnterior = c.procedimientoPrincipalAnterior || originalProcedure;
     for (const f of NUM_FIELDS) c[f] = num(c[f]);
     for (const f of BOOL_FIELDS) c[f] = !!c[f];
-    c.procedimientosAsociados = Array.isArray(c.procedimientosAsociados) ? c.procedimientosAsociados.filter(Boolean) : [];
+    if (Array.isArray(c.procedimientosAsociados) && c.procedimientosAsociados.some((p) => C.procedureName(p) !== p)) c.procedimientosAsociadosAnteriores = c.procedimientosAsociadosAnteriores || [...c.procedimientosAsociados];
+    c.procedimientosAsociados = Array.isArray(c.procedimientosAsociados) ? [...new Set(c.procedimientosAsociados.filter(Boolean).map(C.procedureName))].filter((p) => p !== c.procedimientoPrincipal) : [];
     c.tags = Array.isArray(c.tags) ? c.tags.filter(Boolean) : [];
     c.seguimiento = Array.isArray(c.seguimiento) ? c.seguimiento.filter(Boolean).map(normalizeFollowup) : [];
     c.creado = c.creado || nowISO();
@@ -83,7 +87,7 @@ window.BF = window.BF || {};
     // Las metas se siembran una sola vez: si el fellow las borra todas, no vuelven.
     const objetivos = store.get(KEYS.objetivos, null);
     if (objetivos && typeof objetivos === 'object') {
-      state.objetivos = objetivos;
+      state.objetivos = C.procedureObjectives(objetivos);
     } else {
       state.objetivos = Object.assign({}, C.DEFAULT_OBJETIVOS);
       store.set(KEYS.objetivos, state.objetivos);
@@ -253,7 +257,7 @@ window.BF = window.BF || {};
 
       // Las metas también viajan en el archivo, para no recargarlas en cada dispositivo.
       if (!state.dirty && res.data.objetivos && typeof res.data.objetivos === 'object') {
-        state.objetivos = res.data.objetivos;
+        state.objetivos = C.procedureObjectives(res.data.objetivos);
       }
       if (!state.dirty && ['todos', 'cirujano'].includes(res.data.preferencias?.objetivoModo)) saveCfg({ objetivoModo: res.data.preferencias.objetivoModo });
 

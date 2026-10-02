@@ -82,7 +82,10 @@ window.BF = window.BF || {};
   function applyImport(preview, mode) {
     if (!['merge', 'replace'].includes(mode)) return false;
     const casos = mode === 'merge' ? mergeById(S.all(), preview.casos) : preview.casos.map(S.normalize);
-    if (preview.objetivos) S.state.objetivos = mode === 'merge' ? Object.assign({}, S.getObjetivos(), preview.objetivos) : preview.objetivos;
+    if (preview.objetivos) {
+      const objetivos = C.procedureObjectives(preview.objetivos);
+      S.state.objetivos = mode === 'merge' ? Object.assign({}, S.getObjetivos(), objetivos) : objetivos;
+    }
     if (mode === 'replace' && ['todos', 'cirujano'].includes(preview.modo)) S.saveCfg({ objetivoModo: preview.modo });
     S.replaceAll(casos, { reason: 'import', replaceRemote: mode === 'replace' });
     if (S.isConfigured() && S.state.cfg.auto) S.schedulePush();

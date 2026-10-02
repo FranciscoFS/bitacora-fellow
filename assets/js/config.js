@@ -65,7 +65,6 @@ BF.CONFIG = {
     'Osteotomía de tuberosidad tibial (Fulkerson / Elmslie)',
     'Luxación patelar: liberación lateral',
     'Artroplastia patelofemoral',
-    'Fractura de rótula: osteosíntesis',
     // Artroplastia
     'Prótesis total de rodilla (PTR)',
     'Prótesis unicompartimental (PUC)',
@@ -85,9 +84,11 @@ BF.CONFIG = {
     'Aloinjerto osteocondral',
     'Implante de matriz de colágeno',
     // Trauma
-    'Fractura de meseta tibial: osteosíntesis',
-    'Fractura de cóndilo femoral: osteosíntesis',
-    'Fractura supracondílea femoral: osteosíntesis',
+    'Fractura Fémur Distal',
+    'Fractura Periprotésica',
+    'Fractura Platillos Tibiales',
+    'Fractura de Rótula',
+    'Fractura Avulsiva Espinas Tibiales LCA / LCP',
     'Fractura de tibia proximal: osteosíntesis',
     'Politrauma de rodilla',
     'Retiro de material de osteosíntesis',
@@ -124,12 +125,41 @@ BF.CONFIG = {
     'Reconstrucción de LCA': 30,
     'Reparación meniscal (sutura)': 20,
     'Prótesis total de rodilla (PTR)': 20,
-    'Fractura de meseta tibial: osteosíntesis': 10
+    'Fractura Platillos Tibiales': 10
   }
 };
 
 /* Roles en los que el fellow actúa como cirujano */
 BF.CONFIG.ROLES_CIRUJANO = ['Cirujano (supervisado)', 'Cirujano (independiente)'];
+
+/* Compatibilidad de nombres anteriores del catálogo. */
+BF.CONFIG.PROCEDIMIENTO_ALIAS = {
+  'Fractura de meseta tibial: osteosíntesis': 'Fractura Platillos Tibiales',
+  'Fractura de cóndilo femoral: osteosíntesis': 'Fractura Fémur Distal',
+  'Fractura supracondílea femoral: osteosíntesis': 'Fractura Fémur Distal',
+  'Fractura de rótula: osteosíntesis': 'Fractura de Rótula'
+};
+BF.CONFIG.procedureName = (name) => BF.CONFIG.PROCEDIMIENTO_ALIAS[name] || name;
+BF.CONFIG.procedureArea = (name) => {
+  const p = BF.CONFIG.procedureName(name);
+  const index = BF.CONFIG.PROCEDIMIENTOS.indexOf(p);
+  if (index < 0) return 'Otros';
+  const boundaries = [
+    ['Artroscopia diagnóstica', 'Menisco'], ['Reconstrucción de LCA', 'Ligamentos'],
+    ['Estabilización de rótula (MPFL)', 'Patelofemoral'], ['Prótesis total de rodilla (PTR)', 'Artroplastia'],
+    ['Osteotomía tibial alta (HTO)', 'Osteotomías'], ['Condroplastia / regularización', 'Cartílago'],
+    ['Fractura Fémur Distal', 'Trauma'], ['Sinovectomía (artroscópica/abierta)', 'Otros']
+  ];
+  return boundaries.reverse().find(([first]) => index >= BF.CONFIG.PROCEDIMIENTOS.indexOf(first))[1];
+};
+BF.CONFIG.procedureObjectives = (objectives) => {
+  const normalized = {};
+  for (const [name, goal] of Object.entries(objectives)) {
+    const canonical = BF.CONFIG.procedureName(name);
+    normalized[canonical] = Math.max(normalized[canonical] || 0, goal);
+  }
+  return normalized;
+};
 
 /* Alias cortos, por comodidad al leer el código */
 BF.ROLES = BF.CONFIG.ROLES;

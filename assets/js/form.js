@@ -15,10 +15,7 @@ window.BF = window.BF || {};
   const fields = () => Array.from(form.elements).filter((f) => f.name && !f.name.startsWith('fup_'));
   const areas = ['Todas', 'Menisco', 'Ligamentos', 'Patelofemoral', 'Artroplastia', 'Osteotomías', 'Cartílago', 'Trauma', 'Otros'];
   let principalArea = 'Todas', associatedArea = 'Todas';
-  const areaOf = (p) => {
-    const index = C.PROCEDIMIENTOS.indexOf(p);
-    return index < 0 ? 'Otros' : index < 7 ? 'Menisco' : index < 16 ? 'Ligamentos' : index < 22 ? 'Patelofemoral' : index < 28 ? 'Artroplastia' : index < 31 ? 'Osteotomías' : index < 37 ? 'Cartílago' : index < 43 ? 'Trauma' : 'Otros';
-  };
+  const areaOf = C.procedureArea;
   const optionMarkup = (p, selected, attr) => `<button class="catalog-option${selected ? ' is-selected' : ''}" type="button" ${attr}="${esc(p)}" aria-pressed="${selected}"><span><small>${esc(areaOf(p))}</small><strong>${esc(p)}</strong></span><span class="option-action" aria-hidden="true">${selected ? '✓' : '+'}</span></button>`;
   function renderCategories(id, current) {
     $(id).innerHTML = areas.map((a) => `<button type="button" data-area="${esc(a)}" aria-pressed="${a === current}">${esc(a)}</button>`).join('');
@@ -135,6 +132,7 @@ window.BF = window.BF || {};
   }
 
   function write(caso) {
+    caso = { ...caso, procedimientoPrincipal: C.procedureName(caso.procedimientoPrincipal), procedimientosAsociados: [...new Set((caso.procedimientosAsociados || []).map(C.procedureName))] };
     legacyDetails = keepLegacyDetails(caso);
     for (const field of fields()) {
       if (field.type === 'checkbox') field.checked = !!caso[field.name];
