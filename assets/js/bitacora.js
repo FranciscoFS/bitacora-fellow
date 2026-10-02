@@ -131,6 +131,7 @@ window.BF = window.BF || {};
       ${section('Equipo y participación')}
       ${row('Cirujano supervisor', c.cirujano)}
       ${row('Mi rol', c.rol)}
+      ${row('Pasos que realicé', (c.pasosRealizados || []).join(' · '))}
       ${row('Abordaje', c.abordaje)}
       ${row('Anestesia', c.anestesia)}
 

@@ -5,6 +5,7 @@ window.BF = window.BF || {};
   let form, selectedProc = new Set(), editingId = null, baseline = '', dirty = false;
   let legacyDetails = {};
   let excludedAutoTags = new Set();
+  let personalSteps = new Set();
   const keepLegacyDetails = (caso = {}) => ({
     seguimiento: caso.seguimiento || [], presentadoEnAteneo: !!caso.presentadoEnAteneo, publicable: !!caso.publicable,
     internacionDias: caso.internacionDias ?? null, uti: !!caso.uti,
@@ -65,6 +66,7 @@ window.BF = window.BF || {};
     caso.tags = String(caso.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
     caso.manualTags = [...caso.tags];
     caso.procedimientosAsociados = Array.from(selectedProc);
+    caso.pasosRealizados = [...personalSteps];
     caso.autoTags = [];
     caso.excludedAutoTags = [...excludedAutoTags];
     return C.withAutoTags(caso);
@@ -111,6 +113,12 @@ window.BF = window.BF || {};
       $$('input,select,textarea', container).forEach((f) => { f.disabled = !visible; });
     });
     renderTags();
+    renderPersonalSteps();
+  }
+
+  function renderPersonalSteps() {
+    const options = [...new Set([...C.personalStepsFor(capture()), ...personalSteps])];
+    $('#personalStepsOptions').innerHTML = options.length ? options.map((step) => `<button type="button" class="chip${personalSteps.has(step) ? ' on' : ''}" data-personal-step="${esc(step)}" aria-pressed="${personalSteps.has(step)}">${esc(step)} <span aria-hidden="true">${personalSteps.has(step) ? '✓' : '+'}</span></button>`).join('') : '<span class="muted small">Selecciona un procedimiento para ver opciones.</span>';
   }
 
   function renderTags() {
@@ -152,6 +160,7 @@ window.BF = window.BF || {};
     caso = { ...caso, procedimientoPrincipal: C.procedureName(caso.procedimientoPrincipal), procedimientosAsociados: [...new Set((caso.procedimientosAsociados || []).map(C.procedureName))] };
     legacyDetails = keepLegacyDetails(caso);
     excludedAutoTags = new Set(caso.excludedAutoTags || []);
+    personalSteps = new Set(caso.pasosRealizados || []);
     for (const field of fields()) {
       if (field.type === 'checkbox') field.checked = !!caso[field.name];
       else field.value = caso[field.name] ?? '';
@@ -179,6 +188,7 @@ window.BF = window.BF || {};
     const fecha = form.elements.fecha.value, surgeon = form.elements.cirujano.value;
     form.reset(); editingId = null; selectedProc.clear(); legacyDetails = keepLegacyDetails();
     excludedAutoTags.clear();
+    personalSteps.clear();
     principalArea = associatedArea = 'Todas';
     fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
     form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo();
@@ -239,7 +249,7 @@ window.BF = window.BF || {};
     if (!saved) { $('#formMsg').textContent = 'No se encontró el caso. Conserva tu borrador.'; return false; }
     refreshDatalist(); resetForm({ keepDate: andNew, keepSurgeon: andNew });
     const reliable = store.reliable();
-    const message = reliable ? `${saved.codigo} ${wasEditing ? 'actualizado' : 'guardado'} en este dispositivo.${S.isConfigured() ? ' Pendiente de sincronización.' : ''}` : `${saved.codigo} permanece en memoria. No se pudo guardar en este dispositivo.`;
+    const message = reliable ? `${saved.codigo} ${wasEditing ? 'actualizado' : 'guardado'}. ${S.isConfigured() ? S.state.cfg.auto ? 'Enviando los cambios a GitHub…' : 'Guardado en este dispositivo. Pulsa «Sincronizar ahora» para enviarlo a GitHub.' : 'Guardado en este dispositivo. Conecta GitHub en Ajustes para sincronizar.'}` : `${saved.codigo} permanece en memoria. No se pudo guardar en este dispositivo.`;
     BF.util.toast(message, reliable ? 'ok' : 'err', 6000);
     if (andNew) { $('#formMsg').textContent = message; form.elements.diagnostico.focus(); }
     else BF.app.show('bitacora');
@@ -261,6 +271,12 @@ window.BF = window.BF || {};
       $('#draftStatus').textContent = 'Borrador recuperado. Complétalo y guarda el caso cuando esté listo.';
     }
     form.addEventListener('submit', (e) => { e.preventDefault(); save(); });
+    $('#personalStepsOptions').addEventListener('click', (e) => {
+      const button = e.target.closest('[data-personal-step]'); if (!button) return;
+      const step = button.dataset.personalStep;
+      personalSteps.has(step) ? personalSteps.delete(step) : personalSteps.add(step);
+      changed();
+    });
     $('#autoTagChips').addEventListener('click', (e) => {
       const button = e.target.closest('[data-auto-tag]'); if (!button) return;
       const tag = button.dataset.autoTag;

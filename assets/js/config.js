@@ -165,6 +165,25 @@ BF.CONFIG.procedureObjectives = (objectives) => {
   return normalized;
 };
 
+BF.CONFIG.personalStepsFor = (c) => {
+  const procedures = [c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean).map(BF.CONFIG.procedureName);
+  if (!procedures.length) return [];
+  const text = procedures.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const steps = ['Abordaje'];
+  if (/artroscop/.test(String(c.abordaje || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()) || /artroscop/.test(text)) steps.push('Artroscopia diagnóstica');
+  if (/meniscectomia/.test(text)) steps.push('Meniscectomía');
+  if (/reparacion meniscal/.test(text)) steps.push('Sutura meniscal');
+  if (/reconstruccion/.test(text)) steps.push('Preparación del injerto', 'Preparación de túneles', 'Fijación del injerto');
+  if (/\blet\b/.test(text)) steps.push('Tenodesis extraarticular lateral (LET)');
+  if (/fractura|luxacion/.test(text)) steps.push('Reducción');
+  if (/fractura|osteosintesis/.test(text)) steps.push('Osteosíntesis');
+  if (/protesis|recambio|artroplastia/.test(text)) steps.push('Preparación ósea', 'Colocación de componentes');
+  if (/osteotomia/.test(text)) steps.push('Osteotomía', 'Fijación');
+  if (/condroplastia/.test(text)) steps.push('Condroplastia');
+  if (/microfracturas/.test(text)) steps.push('Microfracturas');
+  return [...new Set([...steps, 'Cierre'])];
+};
+
 /* Etiquetas basadas exclusivamente en los datos registrados. */
 BF.CONFIG.suggestTags = (c) => {
   const procedures = [c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean).map(BF.CONFIG.procedureName);

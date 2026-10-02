@@ -11,7 +11,7 @@ window.BF = window.BF || {};
     ['lateralidad', 'Lateralidad'], ['imc', 'IMC'], ['institucion', 'Institución'],
     ['diagnostico', 'Diagnóstico'], ['patronMultiligamentario', 'Patrón multiligamentario'], ['clasificacionMultiligamentaria', 'Clasificación de Schenck'], ['antecedentesRodilla', 'Antecedentes rodilla'],
     ['comorbilidades', 'Comorbilidades'], ['cirujano', 'Cirujano supervisor'], ['rol', 'Mi rol'],
-    ['procedimientoPrincipal', 'Procedimiento principal'], ['_asociados', 'Procedimientos asociados'],
+    ['procedimientoPrincipal', 'Procedimiento principal'], ['_asociados', 'Procedimientos asociados'], ['_pasos', 'Pasos que realicé'],
     ['injertoLca', 'Tipo de injerto LCA'], ['tecnicaMeniscal', 'Técnica de sutura meniscal'],
     ['abordaje', 'Abordaje'], ['anestesia', 'Anestesia'], ['duracionMin', 'Duración (min)'],
     ['torniquete', 'Torniquete'], ['torniqueteMin', 'Isquemia (min)'], ['hallazgos', 'Hallazgos'],
@@ -34,6 +34,7 @@ window.BF = window.BF || {};
     const head = COLUMNS.map(([, label]) => label).join(';');
     const lines = casos.map((c) => COLUMNS.map(([key]) => {
       if (key === '_asociados') return cell((c.procedimientosAsociados || []).join(' | '));
+      if (key === '_pasos') return cell((c.pasosRealizados || []).join(' | '));
       if (key === '_tags') return cell((c.tags || []).join(', '));
       if (key === '_controles') return cell((c.seguimiento || []).length);
       return cell(c[key]);
@@ -73,7 +74,7 @@ window.BF = window.BF || {};
     const borrador = parsed?.borrador;
     if (borrador && (!borrador.caso || typeof borrador.caso !== 'object' || Array.isArray(borrador.caso))) throw new Error('El borrador del respaldo no es válido.');
     for (const caso of [...casos, ...(borrador ? [borrador.caso] : [])]) {
-      if (['tags', 'procedimientosAsociados', 'seguimiento'].some((key) => caso[key] != null && !Array.isArray(caso[key]))) throw new Error('Hay listas de datos con un formato inválido. No se modificaron los datos.');
+      if (['tags', 'procedimientosAsociados', 'seguimiento', 'pasosRealizados'].some((key) => caso[key] != null && !Array.isArray(caso[key]))) throw new Error('Hay listas de datos con un formato inválido. No se modificaron los datos.');
       if (caso.seguimiento?.some((item) => !item || typeof item !== 'object' || Array.isArray(item))) throw new Error('El seguimiento contiene datos inválidos. No se modificaron los datos.');
     }
     return { casos, objetivos: objetivos ? Object.fromEntries(Object.entries(objetivos)) : null, modo: parsed?.preferencias?.objetivoModo, borrador };

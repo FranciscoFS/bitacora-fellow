@@ -32,6 +32,26 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Las opciones de participación dependen de los procedimientos sin marcar pasos automáticamente', () => {
+  const { context, S } = app(); const C = context.BF.CONFIG;
+  const combined = C.personalStepsFor(caso('combo', { abordaje: 'Artroscópico', procedimientosAsociados: ['Reparación meniscal (sutura)'] }));
+  assert.ok(combined.includes('Artroscopia diagnóstica'));
+  assert.ok(combined.includes('Sutura meniscal'));
+  assert.ok(!combined.includes('Meniscectomía'));
+  assert.ok(C.personalStepsFor(caso('fracture', { procedimientoPrincipal: 'Fractura Fémur Distal' })).includes('Reducción'));
+  assert.ok(!C.personalStepsFor(caso('avulsion', { procedimientoPrincipal: 'Fractura Avulsiva Espinas Tibiales LCA / LCP' })).includes('Preparación del injerto'));
+  S.add(caso('no-steps')); assert.deepEqual(json(S.get('no-steps').pasosRealizados), []);
+});
+
+test('Los pasos seleccionados se conservan en edición, JSON y CSV', () => {
+  const { S, E } = app(); S.add(caso('steps', { pasosRealizados: ['Abordaje', 'Sutura meniscal', 'Abordaje'] }));
+  S.update('steps', { notas: 'Caso ficticio actualizado' });
+  const target = app(); target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
+  assert.deepEqual(json(target.S.get('steps').pasosRealizados), ['Abordaje', 'Sutura meniscal']);
+  assert.ok(E.toCsv(S.all()).includes('Abordaje | Sutura meniscal'));
+  assert.throws(() => E.previewImport({ casos: [caso('bad', { pasosRealizados: 'Abordaje' })] }));
+});
+
 test('Las etiquetas automáticas combinan procedimientos y detalles aplicables', () => {
   const { context } = app(); const C = context.BF.CONFIG;
   const tags = C.suggestTags(caso('tags', { procedimientosAsociados: ['Reparación meniscal (sutura)', 'Tenodesis extraarticular lateral (LET)'], injertoLca: 'Isquiotibiales', tecnicaMeniscal: 'All inside' }));
