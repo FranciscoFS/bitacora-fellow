@@ -1,20 +1,23 @@
 /* ═══════════════════════ Bitácora Fellow · Cirugía de Rodilla ═══════════════════════ */
 
 :root {
+  --brand-blue: #3d7dda;
+  --brand-yellow: #ffdc00;
+  --on-yellow: #132d50;
   color-scheme: light;
 
   /* Superficies y texto */
-  --bg: #f2efe8;
-  --surface: #fffdf8;
-  --surface-2: #e9e5db;
-  --border: #d6cfc1;
-  --text: #302b36;
-  --muted: #746b79;
+  --bg: #f4f7fc;
+  --surface: #ffffff;
+  --surface-2: #edf2fa;
+  --border: #d2ddec;
+  --text: #132d50;
+  --muted: #526582;
 
-  /* Un solo acento cromático. Verde, ámbar y rojo sólo comunican estado. */
-  --accent: #514063;
-  --accent-soft: #e7dfed;
-  --on-accent: #fffdf8;
+  /* Azul para navegación y datos; amarillo para acciones. Estados separados. */
+  --accent: #2157a5;
+  --accent-soft: #e7effc;
+  --on-accent: #ffffff;
   --ok: #15803d;
   --danger: #b91c1c;
   --warn: #b45309;
@@ -48,30 +51,30 @@
   --z-toast: 200;
 
   /* Rampa de datos: un mismo tono frío, no un arcoíris de 8 colores */
-  --c1: #514063; --c2: #716180; --c3: #94879e; --c4: #b9aebf;
-  --c5: #817b70; --c6: #a0998c; --c7: #bdb7aa; --c8: #d8d2c6;
+  --c1: #2157a5; --c2: #3d7dda; --c3: #6094df; --c4: #88aee7;
+  --c5: #5677a0; --c6: #7995b8; --c7: #a1b5d0; --c8: #c9d7e9;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #201c27;
-    --surface: #292431;
-    --surface-2: #332d3c;
-    --border: #473e51;
-    --text: #f2eee5;
-    --muted: #b4a9bc;
-    --accent: #d2e6a1;
-    --accent-soft: #39412d;
-    --on-accent: #201c27;
+    --bg: #0c1830;
+    --surface: #12223e;
+    --surface-2: #1a3051;
+    --border: #304969;
+    --text: #f2f6fc;
+    --muted: #adbed8;
+    --accent: #8bb7ff;
+    --accent-soft: #1a355c;
+    --on-accent: #0c1830;
     --ok: #4ade80;
     --danger: #f87171;
     --sev-1: #fbbf24; --sev-2: #fb923c; --sev-3: #f87171; --sev-4: #ef4444;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
 
-    --c1: #d2e6a1; --c2: #b4c98d; --c3: #93a776; --c4: #778760;
-    --c5: #9e8cad; --c6: #887996; --c7: #72657e; --c8: #5d5368;
+    --c1: #8bb7ff; --c2: #6a9ce8; --c3: #4e84d6; --c4: #3d7dda;
+    --c5: #a4bde1; --c6: #849fc6; --c7: #647fa7; --c8: #4c668b;
   }
 }
 
@@ -147,7 +150,7 @@ code { font-family: var(--mono); font-size: .86em; background: var(--surface-2);
 .brand-mark {
   display: grid; place-items: center;
   width: 38px; height: 38px; border-radius: 11px;
-  background: linear-gradient(140deg, var(--accent), #514063);
+  background: linear-gradient(140deg, var(--accent), #2157a5);
   color: #fff; font-weight: 800; font-size: .82rem; letter-spacing: .04em;
 }
 .brand-text h1 { font-size: 1rem; }
@@ -766,31 +769,35 @@ input[type=checkbox] { min-height: 0; }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f2efe8; --surface: #fffdf8; --surface-2: #e9e5db; --border: #d6cfc1;
-  --text: #302b36; --muted: #746b79; --accent: #514063; --accent-soft: #e7dfed; --on-accent: #fffdf8;
+  --bg: #f4f7fc; --surface: #ffffff; --surface-2: #edf2fa; --border: #d2ddec;
+  --text: #132d50; --muted: #526582; --accent: #2157a5; --accent-soft: #e7effc; --on-accent: #ffffff;
   --ok: #15803d; --danger: #b91c1c; --warn: #b45309;
   --sev-1: #b45309; --sev-2: #c2410c; --sev-3: #b91c1c; --sev-4: #991b1b;
   --shadow: 0 1px 2px rgba(16,32,48,.06), 0 8px 24px -12px rgba(16,32,48,.18);
   --shadow-sm: 0 1px 2px rgba(16,32,48,.05);
-  --c1: #514063; --c2: #716180; --c3: #94879e; --c4: #b9aebf;
-  --c5: #817b70; --c6: #a0998c; --c7: #bdb7aa; --c8: #d8d2c6;
+  --c1: #2157a5; --c2: #3d7dda; --c3: #6094df; --c4: #88aee7;
+  --c5: #5677a0; --c6: #7995b8; --c7: #a1b5d0; --c8: #c9d7e9;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #201c27; --surface: #292431; --surface-2: #332d3c; --border: #473e51;
-  --text: #f2eee5; --muted: #b4a9bc; --accent: #d2e6a1; --accent-soft: #39412d; --on-accent: #201c27;
+  --bg: #0c1830; --surface: #12223e; --surface-2: #1a3051; --border: #304969;
+  --text: #f2f6fc; --muted: #adbed8; --accent: #8bb7ff; --accent-soft: #1a355c; --on-accent: #0c1830;
   --ok: #4ade80; --danger: #f87171; --warn: #fbbf24;
   --sev-1: #fbbf24; --sev-2: #fb923c; --sev-3: #f87171; --sev-4: #ef4444;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
   --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
-  --c1: #d2e6a1; --c2: #b4c98d; --c3: #93a776; --c4: #778760;
-  --c5: #9e8cad; --c6: #887996; --c7: #72657e; --c8: #5d5368;
+  --c1: #8bb7ff; --c2: #6a9ce8; --c3: #4e84d6; --c4: #3d7dda;
+  --c5: #a4bde1; --c6: #849fc6; --c7: #647fa7; --c8: #4c668b;
 }
 
-/* Clinical catalogue: warm surfaces, deliberate selection and readable choices. */
+/* Clinical catalogue: institutional surfaces and readable selection states. */
 .view-head h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 500; letter-spacing: -.045em; font-size: clamp(2rem, 4vw, 3rem); }
 .topbar { border-bottom-color: var(--border); }
-.brand-mark { border-radius: 50% 50% 12px 12px; }
+.brand-mark { border-radius: 50% 50% 12px 12px; background: var(--brand-yellow); color: var(--on-yellow); }
+.btn-primary, .btn-primary:hover { background: var(--brand-yellow); border-color: var(--brand-yellow); color: var(--on-yellow); }
+.tab.active { box-shadow: inset 0 -3px var(--brand-yellow); }
+.topbar { border-top: 3px solid var(--brand-blue); }
+.catalog-option.is-selected { box-shadow: inset 3px 0 var(--brand-yellow); }
 .card, .form-section { box-shadow: none; }
 .essential-fields { padding: 28px; }
 .clinical-workspace { display: grid; grid-template-columns: .85fr 1.15fr; gap: 24px; min-width: 0; }
