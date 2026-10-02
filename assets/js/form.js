@@ -3,7 +3,8 @@ window.BF = window.BF || {};
   const { $, $$, el, esc, todayISO, store, choose } = BF.util;
   const C = BF.CONFIG, S = BF.store;
   let form, selectedProc = new Set(), editingId = null, baseline = '', dirty = false;
-  let followupSequence = 0;
+  let legacyDetails = {};
+  const keepLegacyDetails = (caso = {}) => ({ seguimiento: caso.seguimiento || [], presentadoEnAteneo: !!caso.presentadoEnAteneo, publicable: !!caso.publicable });
   const normalizedQuery = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const fields = () => Array.from(form.elements).filter((f) => f.name && !f.name.startsWith('fup_'));
   const areas = ['Todas', 'Menisco', 'Ligamentos', 'Patelofemoral', 'Artroplastia', 'Osteotomías', 'Cartílago', 'Trauma', 'Otros'];
@@ -54,37 +55,11 @@ window.BF = window.BF || {};
     $('#associatedCount').textContent = `${selectedProc.size} seleccionado(s) · ${options.length} disponibles${options.length > 4 ? ' · Refina la búsqueda para ver más.' : ''}`;
   }
 
-  function followupRow(values = {}) {
-    const row = el('div', { class: 'fup' });
-    const n = ++followupSequence;
-    for (const f of C.FOLLOWUP_FIELDS) {
-      const input = el('input', { name: `fup_${f.key}`, id: `followup-${n}-${f.key}`, type: f.type, class: f.cls || '', inputmode: f.type === 'number' ? 'decimal' : null });
-      if (f.min !== undefined) input.min = f.min;
-      if (f.max !== undefined) input.max = f.max;
-      input.value = values[f.key] ?? '';
-      row.append(el('label', { class: 'field' + (f.key === 'notas' ? ' fup-notes' : '') }, [el('span', { text: f.label }), input]));
-    }
-    const remove = el('button', { type: 'button', class: 'icon-btn', 'aria-label': `Quitar control ${n}`, text: '×' });
-    remove.addEventListener('click', () => { row.remove(); changed(); });
-    row.append(remove);
-    return row;
-  }
-
-  function addFollowup(values) { $('#followupList').append(followupRow(values)); }
-  function readFollowup() {
-    return $$('.fup', $('#followupList')).map((row) => {
-      const values = {};
-      for (const f of C.FOLLOWUP_FIELDS) values[f.key] = row.querySelector(`[name="fup_${f.key}"]`).value;
-      return values;
-    }).filter((v) => Object.values(v).some((value) => value !== ''));
-  }
-
   function capture() {
-    const caso = {};
+    const caso = { ...legacyDetails };
     for (const field of fields()) caso[field.name] = field.type === 'checkbox' ? field.checked : field.value;
     caso.tags = String(caso.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
     caso.procedimientosAsociados = Array.from(selectedProc);
-    caso.seguimiento = readFollowup();
     return caso;
   }
 
@@ -155,6 +130,7 @@ window.BF = window.BF || {};
   }
 
   function write(caso) {
+    legacyDetails = keepLegacyDetails(caso);
     for (const field of fields()) {
       if (field.type === 'checkbox') field.checked = !!caso[field.name];
       else field.value = caso[field.name] ?? '';
@@ -167,27 +143,25 @@ window.BF = window.BF || {};
       form.elements.procedimientoPrincipal.value = caso.procedimientoPrincipal;
     }
     renderPrincipal(); selectedProc = new Set(caso.procedimientosAsociados || []); renderChips();
-    $('#followupList').replaceChildren(); (caso.seguimiento || []).forEach(addFollowup);
     conditionals(); updateSections();
   }
 
   function setMeta() {
     $('#formTitle').textContent = editingId ? `Editar ${form.elements.codigo.value}` : 'Nuevo caso';
-    $('#formSubtitle').textContent = editingId ? 'Actualiza los detalles y guarda los cambios del mismo registro.' : 'Completa lo esencial. Puedes agregar los detalles y el seguimiento después.';
+    $('#formSubtitle').textContent = editingId ? 'Actualiza los detalles y guarda los cambios del mismo registro.' : 'Completa lo esencial. Puedes agregar los detalles después.';
     $('#btnCancelEdit').hidden = !editingId;
     $('#btnSaveCase').textContent = editingId ? 'Guardar cambios' : 'Guardar caso';
   }
 
   function resetForm({ keepDate = false, keepSurgeon = false } = {}) {
     const fecha = form.elements.fecha.value, surgeon = form.elements.cirujano.value;
-    form.reset(); editingId = null; selectedProc.clear();
+    form.reset(); editingId = null; selectedProc.clear(); legacyDetails = keepLegacyDetails();
     principalArea = associatedArea = 'Todas';
     fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
     form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo();
     form.elements.fecha.value = keepDate ? fecha : todayISO();
     if (keepSurgeon) form.elements.cirujano.value = surgeon;
     $('#principalSearch').value = ''; $('#associatedSearch').value = '';
-    $('#followupList').replaceChildren();
     $$('.form-section').forEach((s) => { s.open = false; });
     clearInvalid(); renderPrincipal(); renderChips(); renderDiagnosis(); conditionals(); updateSections(); setMeta();
     $('#formMsg').textContent = ''; $('#formMsg').classList.remove('err');
@@ -205,23 +179,20 @@ window.BF = window.BF || {};
     resetForm(); BF.app.show('nuevo'); form.elements.fecha.focus(); return true;
   }
 
-  async function edit(id, { followup = false } = {}) {
+  async function edit(id) {
     if (!await allowDiscard()) { BF.app.show('nuevo'); return false; }
     const c = S.get(id); if (!c) return false;
     clearInvalid(); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
     write(c); editingId = id; setMeta(); baseline = fingerprint(); dirty = false;
     $('#draftStatus').textContent = 'Los cambios se registran al guardar.';
     $('#formMsg').textContent = ''; BF.app.show('nuevo');
-    if (followup) {
-      $('#followupSection').open = true; addFollowup();
-      $('#followupList .fup:last-child input').focus();
-    } else form.elements.fecha.focus();
+    form.elements.fecha.focus();
     return true;
   }
 
   function validate() {
     clearInvalid();
-    const invalid = fields().concat($$('input', $('#followupList'))).filter((f) => !f.checkValidity());
+    const invalid = fields().filter((f) => !f.checkValidity());
     if (invalid.length) {
       invalid.forEach((f, i) => {
         const detail = f.closest('details'); if (detail) { detail.open = true; detail.classList.add('has-error'); }
@@ -290,7 +261,6 @@ window.BF = window.BF || {};
       $('#associatedSearch').focus();
     };
     $('#procChips').addEventListener('click', toggleProc); $('#procOptions').addEventListener('click', toggleProc);
-    $('#btnAddFollowup').addEventListener('click', () => { addFollowup(); $('#followupList .fup:last-child input').focus(); });
     $('#btnSaveAndNew').addEventListener('click', () => save({ andNew: true }));
     $('#btnResetForm').addEventListener('click', startNew);
     $('#btnCancelEdit').addEventListener('click', async () => { if (await allowDiscard()) { resetForm(); BF.app.show('bitacora'); } });

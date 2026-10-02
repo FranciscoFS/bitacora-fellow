@@ -56,10 +56,10 @@ window.BF = window.BF || {};
         hint: `${m.tasaComplicaciones}% de los casos`,
         tone: m.total ? (m.complicaciones ? 'bad' : 'good') : ''
       }),
-      kpi({ label: 'Duración promedio', value: num1(m.duracionPromedio, ' min'), hint: m.duracionMediana != null ? `mediana ${num1(m.duracionMediana)} min` : '' }),
+      kpi({ label: 'Duración promedio', value: num1(m.duracionPromedio, ' min'), hint: 'promedio de los tiempos registrados' }),
       kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
       kpi({ label: 'Isquemia promedio', value: num1(m.isquemiaPromedio, ' min'), hint: 'casos con torniquete' }),
-      kpi({ label: 'Casos académicos', value: m.academicos, hint: `${m.presentados} en ateneo · ${m.publicables} publicables` })
+      kpi({ label: 'Duración mediana', value: num1(m.duracionMediana, ' min'), hint: 'valor central de los tiempos registrados' })
     ].join('');
   }
 
@@ -89,7 +89,7 @@ window.BF = window.BF || {};
       <p class="muted">Registra tu primera cirugía. Puedes trabajar en este dispositivo y conectar la sincronización cuando lo necesites.</p>
       <ol class="gs-steps">
         ${paso(1, 'Registra tu primer caso',
-          'Completa los campos esenciales y pulsa Guardar caso. Los detalles y el seguimiento pueden esperar.',
+          'Completa los campos esenciales y pulsa Guardar caso. Los detalles pueden esperar.',
           'nuevo', 'Nuevo caso', true)}
         ${paso(2, '¿Ya tienes una bitácora?',
           'Importa tu respaldo o conecta tu repositorio privado desde Ajustes.',

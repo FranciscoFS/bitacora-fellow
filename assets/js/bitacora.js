@@ -115,16 +115,6 @@ window.BF = window.BF || {};
   function section(title) { return `<h4>${esc(title)}</h4>`; }
 
   function detailHtml(c) {
-    const fups = c.seguimiento || [];
-    const fupRows = fups.map((f) => `<tr>
-        <td>${esc(fmtDate(f.fecha))}</td>
-        <td class="num">${f.eva ?? '—'}</td>
-        <td class="num">${f.flexion ?? '—'}</td>
-        <td class="num">${f.extension ?? '—'}</td>
-        <td class="num">${f.score ?? '—'}</td>
-        <td>${esc(f.notas || '')}</td>
-      </tr>`).join('');
-
     return `<dl class="dl">
       ${section('Identificación')}
       ${row('Código', c.codigo)}
@@ -166,16 +156,12 @@ window.BF = window.BF || {};
       ${row('Complicación postoperatoria', c.complicacionPostop ? `Sí — ${c.complicacionPostopDetalle || 'sin detalle'}` : 'No')}
       ${row('Clavien-Dindo', c.complicacionPostop ? c.complicacionClavienDindo : '')}
 
-      ${section('Notas y académico')}
-      ${row('Presentado en ateneo', c.presentadoEnAteneo ? 'Sí' : '')}
-      ${row('Potencial publicación', c.publicable ? 'Sí' : '')}
+      ${section('Notas')}
       ${row('Etiquetas', (c.tags || []).join(', '))}
       ${row('Notas', c.notas)}
       ${row('Creado', fmtDateTime(c.creado))}
       ${row('Última modificación', fmtDateTime(c.actualizado))}
-    </dl>
-    ${fups.length ? `<h4 style="margin:20px 0 10px;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)">Seguimiento (${fups.length})</h4>
-      <div class="table-wrap" tabindex="0" role="region" aria-label="Controles de seguimiento"><table class="data"><thead><tr><th>Fecha</th><th class="num">EVA</th><th class="num">Flexión</th><th class="num">Extensión</th><th class="num">Score</th><th>Notas</th></tr></thead><tbody>${fupRows}</tbody></table></div>` : ''}`;
+    </dl>`;
   }
 
   function open(id) {
@@ -236,7 +222,6 @@ window.BF = window.BF || {};
       close();
       if (id) BF.form.edit(id);
     });
-    $('#modalFollowup').addEventListener('click', () => { const id = current && current.id; close(); if (id) BF.form.edit(id, { followup: true }); });
 
     $('#modalDelete').addEventListener('click', async () => {
       if (!current) return;
