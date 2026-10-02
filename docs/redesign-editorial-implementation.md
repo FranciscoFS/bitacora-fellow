@@ -15,3 +15,7 @@ Validación: 25 pruebas de regresión pasan; sintaxis JS y estructura de etiquet
 La demo usa almacenamiento independiente; el caso ficticio de validación no forma parte del repositorio. No se conectó GitHub de datos ni se probaron sincronizaciones reales. Se conserva el modelo de datos y los gráficos existentes. La simplificación más profunda del selector principal y la incorporación de una fuente sans local quedan para una siguiente iteración.
 
 Captura: `docs/capturas/redesign-editorial-dashboard.jpg`.
+
+## Ajuste de identidad UC
+
+Botones principales en amarillo pastel `#F1D978`, texto azul tinta `#253747`; celeste en superficies seleccionadas y azul en navegación y gráficos. Se conserva el fondo cálido. La guía inicial de tres opciones sigue visible cuando no hay casos; se oculta cuando existen registros para priorizar el dashboard. La paleta es una adaptación visual, no una afirmación de colores institucionales oficiales.
