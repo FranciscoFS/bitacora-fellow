@@ -123,6 +123,8 @@ window.BF = window.BF || {};
 
       ${section('Preoperatorio')}
       ${row('Diagnóstico', c.diagnostico)}
+      ${row('Patrón multiligamentario', c.patronMultiligamentario)}
+      ${row('Clasificación de Schenck', c.clasificacionMultiligamentaria)}
       ${row('Antecedentes de rodilla', c.antecedentesRodilla)}
       ${row('Comorbilidades', c.comorbilidades)}
 

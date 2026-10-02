@@ -8,6 +8,9 @@ BF.CONFIG = {
   DEFAULT_PATH: 'data/bitacora.json',
   LS_PREFIX: 'bf.',
   AUTO_PUSH_DEBOUNCE: 1500,
+  isMultiligamentaryDiagnosis(diagnosis) {
+    return /multiligament/i.test(String(diagnosis || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+  },
   procedureDetailsFor(procedures) {
     return {
       injertoLca: procedures.some((p) => /reconstrucción de LCA|tibial alta \+ LCA/i.test(p)),
@@ -58,7 +61,7 @@ BF.CONFIG = {
     'Reconstrucción de LCL',
     'Reconstrucción de esquina posterolateral',
     'Luxación de rodilla: reducción y estabilización',
-    'Laxitud multiligamentaria: tenodesis',
+    'Tenodesis extraarticular lateral (LET)',
     // Rótula / patelofemoral
     'Estabilización de rótula (MPFL)',
     'Trocleoplastia',
@@ -134,6 +137,7 @@ BF.CONFIG.ROLES_CIRUJANO = ['Cirujano (supervisado)', 'Cirujano (independiente)'
 
 /* Compatibilidad de nombres anteriores del catálogo. */
 BF.CONFIG.PROCEDIMIENTO_ALIAS = {
+  'Laxitud multiligamentaria: tenodesis': 'Tenodesis extraarticular lateral (LET)',
   'Fractura de meseta tibial: osteosíntesis': 'Fractura Platillos Tibiales',
   'Fractura de cóndilo femoral: osteosíntesis': 'Fractura Fémur Distal',
   'Fractura supracondílea femoral: osteosíntesis': 'Fractura Fémur Distal',

@@ -9,7 +9,7 @@ window.BF = window.BF || {};
   const COLUMNS = [
     ['codigo', 'Código'], ['fecha', 'Fecha'], ['hora', 'Hora'], ['edad', 'Edad'], ['sexo', 'Sexo'],
     ['lateralidad', 'Lateralidad'], ['imc', 'IMC'], ['institucion', 'Institución'],
-    ['diagnostico', 'Diagnóstico'], ['antecedentesRodilla', 'Antecedentes rodilla'],
+    ['diagnostico', 'Diagnóstico'], ['patronMultiligamentario', 'Patrón multiligamentario'], ['clasificacionMultiligamentaria', 'Clasificación de Schenck'], ['antecedentesRodilla', 'Antecedentes rodilla'],
     ['comorbilidades', 'Comorbilidades'], ['cirujano', 'Cirujano supervisor'], ['rol', 'Mi rol'],
     ['procedimientoPrincipal', 'Procedimiento principal'], ['_asociados', 'Procedimientos asociados'],
     ['injertoLca', 'Tipo de injerto LCA'], ['tecnicaMeniscal', 'Técnica de sutura meniscal'],

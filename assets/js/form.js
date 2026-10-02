@@ -77,6 +77,7 @@ window.BF = window.BF || {};
     const applicable = C.procedureDetailsFor([c.procedimientoPrincipal, ...c.procedimientosAsociados]);
     if (!applicable.injertoLca) c.injertoLca = '';
     if (!applicable.tecnicaMeniscal) c.tecnicaMeniscal = '';
+    if (!C.isMultiligamentaryDiagnosis(c.diagnostico)) { c.patronMultiligamentario = ''; c.clasificacionMultiligamentaria = ''; }
     if (!c.torniquete) c.torniqueteMin = null;
     if (!c.complicacionIntraop) c.complicacionIntraopDetalle = '';
     return c;
@@ -91,6 +92,9 @@ window.BF = window.BF || {};
   }
 
   function conditionals() {
+    const multiligamentary = C.isMultiligamentaryDiagnosis(form.elements.diagnostico.value);
+    $('#multiligamentaryDetails').hidden = !multiligamentary;
+    for (const key of ['patronMultiligamentario', 'clasificacionMultiligamentaria']) form.elements[key].disabled = !multiligamentary;
     const applicable = C.procedureDetailsFor([form.elements.procedimientoPrincipal.value, ...selectedProc]);
     $('#procedureSpecific').hidden = !applicable.injertoLca && !applicable.tecnicaMeniscal;
     for (const [field, key] of [['#graftField', 'injertoLca'], ['#meniscalTechniqueField', 'tecnicaMeniscal']]) {

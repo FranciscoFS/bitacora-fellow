@@ -32,6 +32,29 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('LET reemplaza la etiqueta antigua y conserva los casos existentes', () => {
+  const { S, context } = app();
+  const old = 'Laxitud multiligamentaria: tenodesis';
+  const current = 'Tenodesis extraarticular lateral (LET)';
+  S.add(caso('let', { procedimientosAsociados: [old] }));
+  assert.deepEqual(json(S.get('let').procedimientosAsociados), [current]);
+  assert.ok(!context.BF.CONFIG.PROCEDIMIENTOS.includes(old));
+  assert.equal(context.BF.CONFIG.procedureArea(current), 'Ligamentos');
+});
+
+test('El patrón y Schenck se conservan al editar y recuperar el JSON', () => {
+  const { S, E, context } = app();
+  assert.ok(context.BF.CONFIG.isMultiligamentaryDiagnosis('Lesión MULTILIGAMENTARIA'));
+  assert.equal(context.BF.CONFIG.isMultiligamentaryDiagnosis('Rotura de LCA'), false);
+  S.add(caso('multi', { diagnostico: 'Lesión multiligamentaria', patronMultiligamentario: 'LCA + LCP + medial', clasificacionMultiligamentaria: 'KD III-M' }));
+  S.update('multi', { notas: 'Registro ficticio actualizado' });
+  const target = app();
+  target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
+  assert.equal(target.S.get('multi').patronMultiligamentario, 'LCA + LCP + medial');
+  assert.equal(target.S.get('multi').clasificacionMultiligamentaria, 'KD III-M');
+  assert.equal(S.normalize(caso('old')).clasificacionMultiligamentaria, '');
+});
+
 test('Trauma usa los nombres del servicio sin desplazar las otras áreas', () => {
   const { context } = app();
   const C = context.BF.CONFIG;
