@@ -1,0 +1,31 @@
+# Archivos del asistente / herramientas, no de la aplicación
+.agents/
+.claude/
+.cursor/
+.codex/
+.aws/
+.env
+.env.*
+!.env.example
+node_modules/
+skills-lock.json
+
+# Restos de pruebas automatizadas
+.playwright-mcp/
+
+# DATOS PERSONALES: nunca al repositorio público de la app.
+# Las planillas viejas y los respaldos contienen datos de pacientes (RUT, ficha).
+data/
+*.csv
+*.xlsx
+*.xls
+bitacora*.json
+*.pdf
+*.docx
+*.zip
+
+# Sistema operativo y editor
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
