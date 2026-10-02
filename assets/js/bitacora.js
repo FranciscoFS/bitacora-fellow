@@ -148,6 +148,8 @@ window.BF = window.BF || {};
       ${section('Procedimiento')}
       ${row('Procedimiento principal', c.procedimientoPrincipal)}
       ${row('Procedimientos asociados', (c.procedimientosAsociados || []).join(' · '))}
+      ${row('Tipo de injerto · LCA', c.injertoLca)}
+      ${row('Técnica de sutura meniscal', c.tecnicaMeniscal)}
       ${row('Hallazgos', c.hallazgos)}
       ${row('Implantes', c.implantes)}
 

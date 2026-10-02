@@ -794,6 +794,9 @@ input[type=checkbox] { min-height: 0; }
 .card, .form-section { box-shadow: none; }
 .essential-fields { padding: 28px; }
 .clinical-workspace { display: grid; grid-template-columns: .85fr 1.15fr; gap: 24px; min-width: 0; }
+.procedure-specific { grid-column: 1 / -1; padding: 20px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 12px 12px 0; }
+.procedure-specific .grid { margin-top: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 700px) { .procedure-specific .grid { grid-template-columns: minmax(0, 1fr); } }
 .clinical-picker { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg); }
 .clinical-picker p { margin: 0; }
 .picker-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }

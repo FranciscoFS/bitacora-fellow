@@ -96,6 +96,9 @@ window.BF = window.BF || {};
 
   function read() {
     const c = capture();
+    const applicable = C.procedureDetailsFor([c.procedimientoPrincipal, ...c.procedimientosAsociados]);
+    if (!applicable.injertoLca) c.injertoLca = '';
+    if (!applicable.tecnicaMeniscal) c.tecnicaMeniscal = '';
     if (!c.torniquete) c.torniqueteMin = null;
     if (!c.complicacionIntraop) c.complicacionIntraopDetalle = '';
     if (!c.complicacionPostop) { c.complicacionPostopDetalle = ''; c.complicacionClavienDindo = ''; }
@@ -111,6 +114,12 @@ window.BF = window.BF || {};
   }
 
   function conditionals() {
+    const applicable = C.procedureDetailsFor([form.elements.procedimientoPrincipal.value, ...selectedProc]);
+    $('#procedureSpecific').hidden = !applicable.injertoLca && !applicable.tecnicaMeniscal;
+    for (const [field, key] of [['#graftField', 'injertoLca'], ['#meniscalTechniqueField', 'tecnicaMeniscal']]) {
+      $(field).hidden = !applicable[key];
+      form.elements[key].disabled = !applicable[key];
+    }
     $$('[data-conditional]', form).forEach((container) => {
       const visible = form.elements[container.dataset.conditional].checked;
       container.hidden = !visible;

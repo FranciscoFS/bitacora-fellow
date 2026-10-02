@@ -12,6 +12,7 @@ window.BF = window.BF || {};
     ['diagnostico', 'Diagnóstico'], ['antecedentesRodilla', 'Antecedentes rodilla'],
     ['comorbilidades', 'Comorbilidades'], ['cirujano', 'Cirujano supervisor'], ['rol', 'Mi rol'],
     ['procedimientoPrincipal', 'Procedimiento principal'], ['_asociados', 'Procedimientos asociados'],
+    ['injertoLca', 'Tipo de injerto LCA'], ['tecnicaMeniscal', 'Técnica de sutura meniscal'],
     ['abordaje', 'Abordaje'], ['anestesia', 'Anestesia'], ['duracionMin', 'Duración (min)'],
     ['torniquete', 'Torniquete'], ['torniqueteMin', 'Isquemia (min)'], ['hallazgos', 'Hallazgos'],
     ['implantes', 'Implantes'], ['complicacionIntraop', 'Complicación intraop.'],

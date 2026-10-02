@@ -16,7 +16,7 @@ window.BF = window.BF || {};
   const TEXT_FIELDS = [
     'codigo', 'fecha', 'hora', 'sexo', 'lateralidad', 'institucion', 'diagnostico',
     'antecedentesRodilla', 'comorbilidades', 'cirujano', 'rol', 'procedimientoPrincipal',
-    'abordaje', 'anestesia', 'hallazgos', 'implantes', 'profilaxis', 'rehabilitacion',
+    'abordaje', 'anestesia', 'hallazgos', 'implantes', 'profilaxis', 'rehabilitacion', 'injertoLca', 'tecnicaMeniscal',
     'complicacionIntraopDetalle', 'complicacionPostopDetalle', 'complicacionClavienDindo', 'notas'
   ];
   const NUM_FIELDS = ['edad', 'imc', 'duracionMin', 'torniqueteMin', 'internacionDias'];

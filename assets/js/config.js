@@ -8,6 +8,12 @@ BF.CONFIG = {
   DEFAULT_PATH: 'data/bitacora.json',
   LS_PREFIX: 'bf.',
   AUTO_PUSH_DEBOUNCE: 1500,
+  procedureDetailsFor(procedures) {
+    return {
+      injertoLca: procedures.some((p) => /reconstrucción de LCA|tibial alta \+ LCA/i.test(p)),
+      tecnicaMeniscal: procedures.includes('Reparación meniscal (sutura)')
+    };
+  },
 
   /* Rol del fellow durante la cirugía (de menor a mayor participación) */
   ROLES: [

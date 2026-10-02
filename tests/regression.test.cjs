@@ -32,6 +32,23 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Injerto y técnica corresponden al procedimiento principal o asociado y se conservan en el JSON', () => {
+  const { context, S, E } = app();
+  const details = context.BF.CONFIG.procedureDetailsFor;
+  assert.deepEqual(json(details(['Reconstrucción de LCA', 'Reparación meniscal (sutura)'])), { injertoLca: true, tecnicaMeniscal: true });
+  assert.equal(details(['Revisión de reconstrucción de LCA']).injertoLca, true);
+  assert.equal(details(['Osteotomía tibial alta + LCA']).injertoLca, true);
+  assert.deepEqual(json(details(['Meniscectomía parcial'])), { injertoLca: false, tecnicaMeniscal: false });
+  S.add(caso('tecnica', { injertoLca: 'Isquiotibiales', tecnicaMeniscal: 'All-inside', procedimientosAsociados: ['Reparación meniscal (sutura)'] }));
+  const saved = json(S.packageData());
+  assert.equal(saved.casos[0].injertoLca, 'Isquiotibiales');
+  assert.equal(saved.casos[0].tecnicaMeniscal, 'All-inside');
+  E.applyImport(E.previewImport(saved), 'replace');
+  assert.equal(S.get('tecnica').tecnicaMeniscal, 'All-inside');
+  assert.ok(E.toCsv(S.all()).includes('Isquiotibiales'));
+  assert.equal(S.normalize(caso('antiguo')).injertoLca, '');
+});
+
 test('La fecha local no se adelanta al día UTC y las medianas son reales', () => {
   const { U } = app();
   assert.equal(U.localDateISO(new Date('2026-10-02T01:00:00Z')), '2026-10-01');
