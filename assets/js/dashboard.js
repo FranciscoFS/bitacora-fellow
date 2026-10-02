@@ -157,7 +157,7 @@ window.BF = window.BF || {};
 
     $('#progressList').innerHTML = filas.map((f) => `
       <div class="goal${f.cumplida ? ' cumplida' : ''}">
-        <span class="goal-name" title="${esc(f.proc)}">${esc(f.proc)}</span>
+        <span class="goal-name" title="${esc(f.members.join(' · '))}">${esc(f.proc)}${f.members.length > 1 ? `<small class="goal-group-label">${f.members.length} procedimientos combinados</small>` : ''}</span>
         <span class="goal-bar"><i style="--pct:${(Math.min(100, f.pct) / 100).toFixed(3)}"></i></span>
         <span class="goal-count">
           <b>${f.logrado}</b>/${editingGoals ? `<input class="goal-meta" type="number" min="1" max="999"
@@ -179,6 +179,25 @@ window.BF = window.BF || {};
       : '<option value="">Todas las metas ya están definidas</option>';
     if (libres.includes(previo)) sel.value = previo;
     $('#btnAddGoal').disabled = !libres.length;
+    const target = $('#goalGroupTarget'), previousTarget = target.value;
+    target.innerHTML = Object.keys(S.getObjetivos()).map((p) => `<option>${esc(p)}</option>`).join('');
+    if (previousTarget in S.getObjetivos()) target.value = previousTarget;
+    loadGoalGroup();
+  }
+
+  let groupMembers = new Set();
+  function loadGoalGroup() {
+    const target = $('#goalGroupTarget').value;
+    groupMembers = new Set(S.getGoalGroups()[target] || (target ? [target] : []));
+    renderGoalGroup();
+  }
+  function renderGoalGroup() {
+    const target = $('#goalGroupTarget').value;
+    const normalize = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const query = normalize($('#goalGroupSearch').value);
+    const options = C.PROCEDIMIENTOS.filter((p) => groupMembers.has(p) || normalize(p).includes(query));
+    $('#goalGroupOptions').innerHTML = options.map((p) => `<button type="button" class="chip${groupMembers.has(p) ? ' on' : ''}" data-goal-member="${esc(p)}" aria-pressed="${groupMembers.has(p)}"${p === target ? ' disabled' : ''}>${esc(p)} ${groupMembers.has(p) ? '✓' : '+'}</button>`).join('');
+    $('#btnSaveGoalGroup').disabled = !target;
   }
 
   /* ───────── Render general ───────── */
@@ -262,6 +281,24 @@ window.BF = window.BF || {};
     });
     $('#goalMeta').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#btnAddGoal').click(); } });
     $('#goalMode').addEventListener('change', () => S.setGoalMode($('#goalMode').checked ? 'cirujano' : 'todos'));
+    $('#goalGroupTarget').addEventListener('change', loadGoalGroup);
+    $('#goalGroupSearch').addEventListener('input', renderGoalGroup);
+    $('#goalGroupOptions').addEventListener('click', (e) => {
+      const button = e.target.closest('[data-goal-member]'); if (!button) return;
+      const p = button.dataset.goalMember;
+      groupMembers.has(p) ? groupMembers.delete(p) : groupMembers.add(p);
+      renderGoalGroup();
+    });
+    $('#btnSaveGoalGroup').addEventListener('click', () => {
+      if (S.setGoalGroup($('#goalGroupTarget').value, [...groupMembers])) BF.util.toast('Combinación de procedimientos guardada.', 'ok');
+    });
+    $('#btnGroupPtr').addEventListener('click', () => {
+      const conventional = 'Prótesis total de rodilla (PTR)', robotic = 'Prótesis total con navegación/robótica';
+      if (!(conventional in S.getObjetivos())) S.setObjetivo(conventional, 20);
+      S.setGoalGroup(conventional, [conventional, robotic]);
+      $('#goalGroupTarget').value = conventional; loadGoalGroup();
+      BF.util.toast('La meta de PTR incluye convencional y navegación/robótica.', 'ok');
+    });
 
     S.on('change', () => { fillFilterSelects(); render(); });
     S.on('cfg', renderProgreso);

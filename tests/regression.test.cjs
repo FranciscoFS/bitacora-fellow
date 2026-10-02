@@ -32,6 +32,34 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Las metas agrupadas cuentan cada caso una vez y respetan el criterio de cirujano', () => {
+  const { S } = app(); const ptr = 'Prótesis total de rodilla (PTR)', robot = 'Prótesis total con navegación/robótica';
+  S.setObjetivo(ptr, 7);
+  S.add(caso('conv', { procedimientoPrincipal: ptr, rol: 'Primer ayudante' }));
+  S.add(caso('robot', { procedimientoPrincipal: robot }));
+  S.add(caso('both', { procedimientoPrincipal: ptr, procedimientosAsociados: [robot] }));
+  assert.equal(S.progreso(S.all()).find(g => g.proc === ptr).logrado, 2);
+  assert.ok(S.setGoalGroup(ptr, [ptr, robot]));
+  assert.equal(S.progreso(S.all()).find(g => g.proc === ptr).logrado, 3);
+  assert.equal(S.progreso(S.all().filter(S.isSurgeon)).find(g => g.proc === ptr).logrado, 2);
+  assert.equal(S.getObjetivos()[ptr], 7);
+  S.setGoalGroup(ptr, [ptr]); assert.equal(S.progreso(S.all()).find(g => g.proc === ptr).logrado, 2);
+});
+
+test('Las combinaciones de metas viajan en JSON, almacenamiento local y sincronización', async () => {
+  const { S, E } = app(); const ptr = 'Prótesis total de rodilla (PTR)', robot = 'Prótesis total con navegación/robótica';
+  S.setGoalGroup(ptr, [ptr, robot]); S.loadLocal();
+  assert.deepEqual(json(S.getGoalGroups()[ptr]), [ptr, robot]);
+  const target = app(); target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
+  assert.deepEqual(json(target.S.getGoalGroups()[ptr]), [ptr, robot]);
+  const remote = app(); remote.S.saveCfg({ owner: 'ficticio', repo: 'ficticio', token: 'ficticio', auto: false }); remote.S.state.dirty = false;
+  remote.context.BF.github = { read: async () => ({ exists: true, data: json(S.packageData()), sha: 'remote' }) };
+  await remote.S.pull({ silent: true });
+  assert.deepEqual(json(remote.S.getGoalGroups()[ptr]), [ptr, robot]);
+  assert.throws(() => E.previewImport({ casos: [], gruposObjetivos: { [ptr]: robot } }));
+  target.S.removeObjetivo(ptr); assert.equal(target.S.getGoalGroups()[ptr], undefined);
+});
+
 test('Reducción y osteosíntesis son procedimientos de Trauma y se vinculan al diagnóstico sin cambiarlo', () => {
   const { context, S, E } = app(); const C = context.BF.CONFIG;
   for (const p of ['Reducción', 'Osteosíntesis', 'Reducción y osteosíntesis']) {

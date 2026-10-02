@@ -296,6 +296,9 @@ legend {
 
 /* Chips (procedimientos asociados) */
 .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.goal-group-editor { border-top: 1px solid var(--border); margin-top: 20px; padding-top: 20px; display: grid; gap: 12px; }
+.goal-group-options { max-height: 240px; overflow-y: auto; padding: 4px; }
+.goal-group-label { display: block; font-size: .75rem; color: var(--muted); margin-top: 4px; }
 .chip {
   border: 1px solid var(--border); background: var(--surface);
   border-radius: 999px; padding: 7px 13px; cursor: pointer;

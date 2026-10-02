@@ -55,7 +55,7 @@ window.BF = window.BF || {};
       version: C.DATA_VERSION,
       exportado: new Date().toISOString(),
       casos: S.all(),
-      objetivos: S.getObjetivos(), preferencias: { objetivoModo: S.getGoalMode() }
+      objetivos: S.getObjetivos(), gruposObjetivos: S.getGoalGroups(), preferencias: { objetivoModo: S.getGoalMode() }
     };
     const draft = BF.util.store.get('draft');
     if (draft?.caso) payload.borrador = draft;
@@ -72,12 +72,14 @@ window.BF = window.BF || {};
     const objetivos = !Array.isArray(parsed) && parsed.objetivos;
     if (objetivos && (typeof objetivos !== 'object' || Array.isArray(objetivos) || Object.entries(objetivos).some(([p, n]) => !p.trim() || !Number.isInteger(n) || n < 1 || n > 999))) throw new Error('Las metas del respaldo no son válidas.');
     const borrador = parsed?.borrador;
+    const grupos = parsed?.gruposObjetivos;
+    if (grupos != null && (typeof grupos !== 'object' || Array.isArray(grupos) || Object.entries(grupos).some(([key, members]) => !key.trim() || !Array.isArray(members) || !members.length || members.some((p) => typeof p !== 'string' || !p.trim())))) throw new Error('Los grupos de metas no son válidos.');
     if (borrador && (!borrador.caso || typeof borrador.caso !== 'object' || Array.isArray(borrador.caso))) throw new Error('El borrador del respaldo no es válido.');
     for (const caso of [...casos, ...(borrador ? [borrador.caso] : [])]) {
       if (['tags', 'procedimientosAsociados', 'seguimiento', 'pasosRealizados'].some((key) => caso[key] != null && !Array.isArray(caso[key]))) throw new Error('Hay listas de datos con un formato inválido. No se modificaron los datos.');
       if (caso.seguimiento?.some((item) => !item || typeof item !== 'object' || Array.isArray(item))) throw new Error('El seguimiento contiene datos inválidos. No se modificaron los datos.');
     }
-    return { casos, objetivos: objetivos ? Object.fromEntries(Object.entries(objetivos)) : null, modo: parsed?.preferencias?.objetivoModo, borrador };
+    return { casos, objetivos: objetivos ? Object.fromEntries(Object.entries(objetivos)) : null, grupos, modo: parsed?.preferencias?.objetivoModo, borrador };
   }
 
   function applyImport(preview, mode) {
@@ -88,6 +90,8 @@ window.BF = window.BF || {};
       S.state.objetivos = mode === 'merge' ? Object.assign({}, S.getObjetivos(), objetivos) : objetivos;
     }
     if (mode === 'replace' && ['todos', 'cirujano'].includes(preview.modo)) S.saveCfg({ objetivoModo: preview.modo });
+    if (preview.grupos) S.state.gruposObjetivos = mode === 'merge' ? { ...S.getGoalGroups(), ...preview.grupos } : preview.grupos;
+    else if (mode === 'replace') S.state.gruposObjetivos = {};
     S.replaceAll(casos, { reason: 'import', replaceRemote: mode === 'replace' });
     if (S.isConfigured() && S.state.cfg.auto) S.schedulePush();
     return true;

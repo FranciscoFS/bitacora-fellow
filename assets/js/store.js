@@ -64,6 +64,7 @@ window.BF = window.BF || {};
   const state = {
     casos: [],
     objetivos: {},
+    gruposObjetivos: {},
     deleted: {},
     replaceRemote: false,
     cfg: { owner: '', repo: '', branch: C.DEFAULT_BRANCH, path: C.DEFAULT_PATH, token: '', auto: true, objetivoModo: 'todos' },
@@ -85,6 +86,7 @@ window.BF = window.BF || {};
     state.dirty = !!meta.dirty;
     state.deleted = meta.deleted || {};
     state.replaceRemote = !!meta.replaceRemote;
+    state.gruposObjetivos = store.get('gruposObjetivos', {}) || {};
 
     // Las metas se siembran una sola vez: si el fellow las borra todas, no vuelven.
     const objetivos = store.get(KEYS.objetivos, null);
@@ -100,7 +102,8 @@ window.BF = window.BF || {};
     const saved = [
       store.set(KEYS.casos, state.casos),
       store.set(KEYS.meta, { sha: state.sha, lastSync: state.lastSync, dirty: state.dirty, deleted: state.deleted, replaceRemote: state.replaceRemote }),
-      store.set(KEYS.objetivos, state.objetivos)
+      store.set(KEYS.objetivos, state.objetivos),
+      store.set('gruposObjetivos', state.gruposObjetivos)
     ];
     return saved.every(Boolean);
   }
@@ -206,6 +209,7 @@ window.BF = window.BF || {};
     version: C.DATA_VERSION,
     actualizado: nowISO(),
     objetivos: state.objetivos,
+    gruposObjetivos: state.gruposObjetivos,
     preferencias: { objetivoModo: getGoalMode() },
     deleted: state.deleted,
     casos: state.casos
@@ -260,6 +264,7 @@ window.BF = window.BF || {};
       // Las metas también viajan en el archivo, para no recargarlas en cada dispositivo.
       if (!state.dirty && res.data.objetivos && typeof res.data.objetivos === 'object') {
         state.objetivos = C.procedureObjectives(res.data.objetivos);
+        state.gruposObjetivos = res.data.gruposObjetivos || {};
       }
       if (!state.dirty && ['todos', 'cirujano'].includes(res.data.preferencias?.objetivoModo)) saveCfg({ objetivoModo: res.data.preferencias.objetivoModo });
 
@@ -420,6 +425,13 @@ window.BF = window.BF || {};
   /* ═════════ Metas de progresión ═════════ */
 
   const getObjetivos = () => state.objetivos;
+  const getGoalGroups = () => state.gruposObjetivos;
+  function setGoalGroup(proc, members) {
+    if (!(proc in state.objetivos) || !Array.isArray(members) || members.some((p) => !C.PROCEDIMIENTOS.includes(p))) return false;
+    state.gruposObjetivos[proc] = [...new Set([proc, ...members])];
+    touch(`Actualiza los procedimientos de la meta de "${proc}"`);
+    return true;
+  }
 
   function setObjetivo(proc, meta) {
     const n = Math.round(num(meta) || 0);
@@ -432,6 +444,7 @@ window.BF = window.BF || {};
   function removeObjetivo(proc) {
     if (!(proc in state.objetivos)) return false;
     delete state.objetivos[proc];
+    delete state.gruposObjetivos[proc];
     touch(`Quita la meta de "${proc}"`);
     return true;
   }
@@ -446,9 +459,11 @@ window.BF = window.BF || {};
   function progreso(base) {
     return Object.keys(state.objetivos).map((proc) => {
       const meta = num(state.objetivos[proc]) || 0;
-      const logrado = base.filter((c) => proceduresOf(c).includes(proc)).length;
+      const members = state.gruposObjetivos[proc] || [proc];
+      const logrado = base.filter((c) => proceduresOf(c).some((p) => members.includes(p))).length;
       return {
         proc,
+        members,
         meta,
         logrado,
         faltan: Math.max(0, meta - logrado),
@@ -464,7 +479,7 @@ window.BF = window.BF || {};
     all: () => state.casos, sorted, get, add, update, remove, replaceAll,
     nextCodigo, proceduresOf, isSurgeon, hasComplication,
     filter, matches, metrics, distinctCirujanos,
-    getObjetivos, setObjetivo, removeObjetivo, getGoalMode, setGoalMode, progreso,
+    getObjetivos, setObjetivo, removeObjetivo, getGoalGroups, setGoalGroup, getGoalMode, setGoalMode, progreso,
     pull, push, schedulePush, testConnection, packageData
   };
 })();
