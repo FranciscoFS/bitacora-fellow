@@ -38,6 +38,13 @@ test('Las opciones de participación dependen de los procedimientos sin marcar p
   assert.ok(combined.includes('Artroscopia diagnóstica'));
   assert.ok(combined.includes('Sutura meniscal'));
   assert.ok(!combined.includes('Meniscectomía'));
+  assert.ok(combined.includes('Desbridamiento del remanente de LCA'));
+  assert.ok(combined.includes('Preparación de la escotadura'));
+  const cartilage = C.personalStepsFor(caso('cartilage', { procedimientoPrincipal: 'Condroplastia / regularización', abordaje: 'Artroscópico' }));
+  assert.ok(cartilage.includes('Desbridamiento condral'));
+  assert.ok(!cartilage.includes('Desbridamiento del remanente de LCA'));
+  assert.ok(C.personalStepsFor(caso('general', { procedimientoPrincipal: 'Artroscopia diagnóstica' })).includes('Desbridamiento artroscópico'));
+  assert.ok(C.personalStepsFor(caso('combined', { procedimientosAsociados: ['Microfracturas'] })).includes('Desbridamiento condral'));
   assert.ok(C.personalStepsFor(caso('fracture', { procedimientoPrincipal: 'Fractura Fémur Distal' })).includes('Reducción'));
   assert.ok(!C.personalStepsFor(caso('avulsion', { procedimientoPrincipal: 'Fractura Avulsiva Espinas Tibiales LCA / LCP' })).includes('Preparación del injerto'));
   S.add(caso('no-steps')); assert.deepEqual(json(S.get('no-steps').pasosRealizados), []);

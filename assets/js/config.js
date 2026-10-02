@@ -170,7 +170,14 @@ BF.CONFIG.personalStepsFor = (c) => {
   if (!procedures.length) return [];
   const text = procedures.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const steps = ['Abordaje'];
-  if (/artroscop/.test(String(c.abordaje || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()) || /artroscop/.test(text)) steps.push('Artroscopia diagnóstica');
+  const arthroscopic = /artroscop/.test(String(c.abordaje || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()) || /artroscop/.test(text);
+  const acl = BF.CONFIG.procedureDetailsFor(procedures).injertoLca;
+  const diagnosis = String(c.diagnostico || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const cartilage = procedures.some((p) => BF.CONFIG.procedureArea(p) === 'Cartílago') || /condral|condropat|cartilag/.test(diagnosis);
+  if (arthroscopic) steps.push('Artroscopia diagnóstica');
+  if (acl) steps.push('Desbridamiento del remanente de LCA', 'Preparación de la escotadura');
+  if (cartilage) steps.push('Desbridamiento condral');
+  if (arthroscopic && !acl && !cartilage) steps.push('Desbridamiento artroscópico');
   if (/meniscectomia/.test(text)) steps.push('Meniscectomía');
   if (/reparacion meniscal/.test(text)) steps.push('Sutura meniscal');
   if (/reconstruccion/.test(text)) steps.push('Preparación del injerto', 'Preparación de túneles', 'Fijación del injerto');
