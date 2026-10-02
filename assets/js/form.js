@@ -4,7 +4,13 @@ window.BF = window.BF || {};
   const C = BF.CONFIG, S = BF.store;
   let form, selectedProc = new Set(), editingId = null, baseline = '', dirty = false;
   let legacyDetails = {};
-  const keepLegacyDetails = (caso = {}) => ({ seguimiento: caso.seguimiento || [], presentadoEnAteneo: !!caso.presentadoEnAteneo, publicable: !!caso.publicable });
+  const keepLegacyDetails = (caso = {}) => ({
+    seguimiento: caso.seguimiento || [], presentadoEnAteneo: !!caso.presentadoEnAteneo, publicable: !!caso.publicable,
+    internacionDias: caso.internacionDias ?? null, uti: !!caso.uti,
+    profilaxis: caso.profilaxis || '', rehabilitacion: caso.rehabilitacion || '',
+    complicacionPostop: !!caso.complicacionPostop, complicacionPostopDetalle: caso.complicacionPostopDetalle || '',
+    complicacionClavienDindo: caso.complicacionClavienDindo || ''
+  });
   const normalizedQuery = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const fields = () => Array.from(form.elements).filter((f) => f.name && !f.name.startsWith('fup_'));
   const areas = ['Todas', 'Menisco', 'Ligamentos', 'Patelofemoral', 'Artroplastia', 'Osteotomías', 'Cartílago', 'Trauma', 'Otros'];
@@ -76,7 +82,6 @@ window.BF = window.BF || {};
     if (!applicable.tecnicaMeniscal) c.tecnicaMeniscal = '';
     if (!c.torniquete) c.torniqueteMin = null;
     if (!c.complicacionIntraop) c.complicacionIntraopDetalle = '';
-    if (!c.complicacionPostop) { c.complicacionPostopDetalle = ''; c.complicacionClavienDindo = ''; }
     return c;
   }
 

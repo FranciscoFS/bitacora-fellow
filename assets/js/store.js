@@ -51,7 +51,7 @@ window.BF = window.BF || {};
   /** Todos los procedimientos de un caso (principal + asociados). */
   const proceduresOf = (c) => [c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean);
   const isSurgeon = (c) => C.ROLES_CIRUJANO.includes(c.rol);
-  const hasComplication = (c) => c.complicacionIntraop || c.complicacionPostop;
+  const hasComplication = (c) => c.complicacionIntraop;
 
   /* ═════════ Estado ═════════ */
 

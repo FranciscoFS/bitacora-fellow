@@ -69,11 +69,8 @@ window.BF = window.BF || {};
     const tbody = $('#caseTable tbody');
 
     tbody.innerHTML = rows.map((c) => {
-      const compl = c.complicacionIntraop || c.complicacionPostop;
-      const complLabel = [
-        c.complicacionIntraop ? 'Intraop.' : '',
-        c.complicacionPostop ? 'Postop.' : ''
-      ].filter(Boolean).join(' + ');
+      const compl = c.complicacionIntraop;
+      const complLabel = 'Intraop.';
       const lat = (c.lateralidad || '').charAt(0) || '—';
       return `<tr data-id="${c.id}">
         <td><button class="code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.codigo)}</button></td>
@@ -147,14 +144,6 @@ window.BF = window.BF || {};
       ${row('Duración', c.duracionMin != null ? `${c.duracionMin} min` : '')}
       ${row('Isquemia', c.torniquete ? `Sí${c.torniqueteMin != null ? ` · ${c.torniqueteMin} min` : ''}` : 'No')}
       ${row('Complicación intraoperatoria', c.complicacionIntraop ? `Sí — ${c.complicacionIntraopDetalle || 'sin detalle'}` : 'No')}
-
-      ${section('Postoperatorio')}
-      ${row('Internación', c.internacionDias != null ? `${c.internacionDias} día(s)` : '')}
-      ${row('UTI', c.uti ? 'Sí' : 'No')}
-      ${row('Profilaxis', c.profilaxis)}
-      ${row('Rehabilitación', c.rehabilitacion)}
-      ${row('Complicación postoperatoria', c.complicacionPostop ? `Sí — ${c.complicacionPostopDetalle || 'sin detalle'}` : 'No')}
-      ${row('Clavien-Dindo', c.complicacionPostop ? c.complicacionClavienDindo : '')}
 
       ${section('Notas')}
       ${row('Etiquetas', (c.tags || []).join(', '))}

@@ -52,7 +52,7 @@ window.BF = window.BF || {};
       kpi({ label: 'Como cirujano', value: m.comoCirujano, hint: `${m.pctCirujano}% del total`, tone: 'accent' }),
       kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
       kpi({
-        label: 'Complicaciones', value: m.complicaciones,
+        label: 'Complicaciones intraop.', value: m.complicaciones,
         hint: `${m.tasaComplicaciones}% de los casos`,
         tone: m.total ? (m.complicaciones ? 'bad' : 'good') : ''
       }),
@@ -133,16 +133,7 @@ window.BF = window.BF || {};
     Ch.hbars($('#chartProc'), m.porProcedimiento, { limit: 8, legend: false, aria: 'procedimientos más frecuentes' });
     Ch.donut($('#chartLateralidad'), m.porLateralidad, { centerLabel: 'rodillas', aria: 'lateralidad' });
 
-    // Las complicaciones sí llevan color con significado: la gravedad de Clavien-Dindo.
-    const SEV = {
-      I: 'var(--sev-1)', II: 'var(--sev-2)', IIIa: 'var(--sev-3)', IIIb: 'var(--sev-3)',
-      IVa: 'var(--sev-4)', IVb: 'var(--sev-4)', V: 'var(--sev-4)'
-    };
-    Ch.bars(
-      $('#chartCompl'),
-      m.porClavien.map((d) => ({ key: d.name, label: d.name, value: d.value })),
-      { aria: 'complicaciones según Clavien-Dindo', barWidth: 26, colorFor: (d) => SEV[d.key] || 'var(--danger)' }
-    );
+    Ch.hbars($('#chartAbordaje'), m.porAbordaje, { aria: 'abordajes utilizados' });
   }
 
   /* ───────── Progresión del fellow ───────── */

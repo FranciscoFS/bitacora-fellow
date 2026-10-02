@@ -32,6 +32,18 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Los datos postoperatorios antiguos se conservan sin contar como complicación intraoperatoria', () => {
+  const { S } = app();
+  S.add(caso('antiguo', { complicacionPostop: true, complicacionClavienDindo: 'IIIb', internacionDias: 4, profilaxis: 'Dato ficticio' }));
+  assert.equal(S.hasComplication(S.get('antiguo')), false);
+  S.update('antiguo', { diagnostico: 'Diagnóstico ficticio actualizado' });
+  const saved = S.packageData().casos[0];
+  assert.equal(saved.internacionDias, 4);
+  assert.equal(saved.complicacionClavienDindo, 'IIIb');
+  assert.equal(saved.profilaxis, 'Dato ficticio');
+  assert.equal(S.hasComplication(caso('intraop', { complicacionIntraop: true })), true);
+});
+
 test('Injerto y técnica corresponden al procedimiento principal o asociado y se conservan en el JSON', () => {
   const { context, S, E } = app();
   const details = context.BF.CONFIG.procedureDetailsFor;
