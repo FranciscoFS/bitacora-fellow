@@ -9,6 +9,9 @@ window.BF = window.BF || {};
   let current = null;      // caso abierto en el panel
   let armado = null;       // temporizador de la confirmación en dos pasos
   let focoPrevio = null;   // elemento que tenía el foco antes de abrir el panel
+  let scope = null;
+  function setScope(value, label) { scope = value; $('#listScopeText').textContent=label; $('#tableSearch').value='';render(); }
+  function clearScope() { scope=null;$('#tableSearch').value='';render(); }
 
   /* ───────── Foco del panel (diálogo accesible) ───────── */
 
@@ -64,6 +67,7 @@ window.BF = window.BF || {};
   }
 
   function render() {
+    $('#listScope').hidden=!scope;
     const q = $('#tableSearch').value.trim().toLowerCase();
     const rows = visibleCases();
     const tbody = $('#caseTable tbody');
@@ -100,7 +104,7 @@ window.BF = window.BF || {};
     $('#btnExportList').textContent = `Exportar resultados (${rows.length})`;
     $('#btnExportList').disabled = !rows.length;
   }
-  function visibleCases() { const q = $('#tableSearch').value.trim().toLowerCase(); return sortCases(q ? S.filter({ q }) : S.all()); }
+  function visibleCases() { const q = $('#tableSearch').value.trim().toLowerCase(); const list=q?S.filter({q}):S.all();return sortCases(scope?list.filter(c=>BF.practice.matches(c,scope)):list); }
 
   /* ───────── Modal de detalle ───────── */
 
@@ -201,7 +205,8 @@ window.BF = window.BF || {};
     $('#tableSearch').addEventListener('input', search);
     $('#tableSort').addEventListener('change', render);
     $('#btnNewFromList').addEventListener('click', () => BF.form.startNew());
-    $('#btnClearSearch').addEventListener('click', () => { $('#tableSearch').value = ''; render(); });
+    $('#btnClearSearch').addEventListener('click', clearScope);
+    $('#btnClearScope').addEventListener('click', clearScope);
     $('#btnExportList').addEventListener('click', () => BF.exporter.exportCsv(visibleCases()));
 
     $('#modalClose').addEventListener('click', close);
@@ -225,5 +230,5 @@ window.BF = window.BF || {};
     render();
   }
 
-  BF.bitacora = { init, render, open, close };
+  BF.bitacora = { init, render, open, close, setScope, clearScope };
 })();

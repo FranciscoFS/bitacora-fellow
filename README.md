@@ -6,6 +6,8 @@ Aplicación web para registrar las cirugías de rodilla durante el fellowship: *
 - Funciona **offline** (los datos quedan en el navegador) y se **sincroniza online** con un repositorio **privado** de GitHub.
 - Se publica gratis en **GitHub Pages** y se puede usar desde la computadora y el celular con la misma base de datos.
 
+El diseño **Cuaderno digital** prioriza el registro, actividad reciente y metas. «Tu práctica reciente» muestra los procedimientos principales más frecuentes, con filtros de período y rol; abre los casos correspondientes para consultar o exportar. Los demás indicadores se conservan en «Más indicadores y análisis». [Decisiones y validación](docs/daybook-implementation.md).
+
 ---
 
 ## 1. Probarla en tu computadora

@@ -267,7 +267,7 @@ window.BF = window.BF || {};
     const message = reliable ? `${saved.codigo} ${wasEditing ? 'actualizado' : 'guardado'}. ${S.isConfigured() ? S.state.cfg.auto ? 'Enviando los cambios a GitHub…' : 'Guardado en este dispositivo. Pulsa «Sincronizar ahora» para enviarlo a GitHub.' : 'Guardado en este dispositivo. Conecta GitHub en Ajustes para sincronizar.'}` : `${saved.codigo} permanece en memoria. No se pudo guardar en este dispositivo.`;
     BF.util.toast(message, reliable ? 'ok' : 'err', 6000);
     if (andNew) { $('#formMsg').textContent = message; form.elements.diagnostico.focus(); }
-    else BF.app.show('bitacora');
+    else { BF.bitacora.clearScope(); BF.app.show('bitacora'); }
     return true;
   }
 
