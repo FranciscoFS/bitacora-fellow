@@ -146,3 +146,42 @@ body{font-size:15px}.topbar{background:var(--bg);border-bottom:0;box-shadow:none
 @media(max-width:780px){.daybook-layout{grid-template-columns:1fr}.topbar{gap:8px}.tabs{justify-content:stretch}.tab{padding:10px 8px}.view-head h2{font-size:2.2rem}.practice-controls{grid-template-columns:1fr}.practice-tiles{height:auto;display:flex;flex-direction:column;gap:10px}.practice-tile{position:relative;left:auto;top:auto;width:100%;height:auto;min-height:80px;flex-direction:row;align-items:center;border:0;background:transparent;isolation:isolate;padding:14px}.practice-tile::before{content:'';position:absolute;inset:0 auto 0 0;width:var(--bar);background:var(--practice-tone);border-radius:8px;z-index:-1}.practice-tile strong{max-width:65%}.practice-tile span{font-size:1rem;white-space:nowrap}.practice-tile small{display:block}.practice-scope{align-items:flex-start;flex-direction:column}.recent-case{grid-template-columns:64px minmax(0,1fr) 16px;gap:12px}.personal-summary{padding-top:8px}.progress-card{padding:0}.section-heading{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.btn:active,.practice-tile:active{transform:none}}
 @media print{.practice-controls,.advanced-analysis>summary,.practice-panel .btn{display:none}.practice-tile{position:relative;inset:auto;width:100%;height:auto}.practice-tiles{height:auto;display:grid;gap:8px}}
+/* Layout preference and legible data surfaces. */
+.dashboard-layout-control { display: flex; align-items: center; gap: 6px; margin-bottom: 24px; }
+.dashboard-layout-control > span { margin-right: 8px; }
+.layout-choice { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.layout-choice svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.layout-choice[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+#view-dashboard[data-layout="single"] { max-width: 940px; }
+#view-dashboard[data-layout="single"] .daybook-layout,
+#view-dashboard[data-layout="single"] .charts { grid-template-columns: minmax(0, 1fr); }
+:root { --practice-text: #ffffff; --practice-1: #255a7d; --practice-2: #326b92; --practice-3: #397295; --practice-4: #42799b; --chart-track: #dce5eb; --chart-edge: #326b92; }
+:root[data-theme="dark"] { --practice-text: #ffffff; --practice-1: #3f7ba2; --practice-2: #346b90; --practice-3: #2c5a7d; --practice-4: #244c6c; --chart-track: #263f5d; --chart-edge: #91bde0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) { --practice-text: #ffffff; --practice-1: #3f7ba2; --practice-2: #346b90; --practice-3: #2c5a7d; --practice-4: #244c6c; --chart-track: #263f5d; --chart-edge: #91bde0; }
+}
+.practice-tile { box-shadow: inset 0 0 0 1px var(--chart-edge); }
+.practice-tile strong { overflow-wrap: normal; hyphens: auto; }
+.practice-tile small { color: inherit; }
+.practice-small .practice-tile { padding: 14px 16px; min-height: 80px; }
+.rank-track, .goal-bar { background: var(--chart-track); }
+.rank-track { height: 9px; }
+.chart-values summary { min-height: 44px; display: list-item; padding-block: 10px; }
+@media (hover: hover) and (pointer: fine) { .practice-tile:hover { opacity: 1; box-shadow: inset 0 0 0 2px var(--practice-text); } }
+@media (max-width: 780px) {
+  .dashboard-layout-control { display: none; }
+  .practice-tile, .practice-small .practice-tile { color: var(--text); background: var(--surface); box-shadow: none; padding: 14px 14px 26px; }
+  .practice-tile::before { inset: auto auto 8px 14px; height: 6px; max-width: calc(100% - 28px); border-radius: 3px; z-index: 0; }
+  .practice-small .practice-tile { position: relative; }
+  .practice-tile strong { max-width: 65%; }
+}
+@media print { .dashboard-layout-control { display: none; } }
+.daybook-goals { container-type: inline-size; }
+@container (max-width: 520px) {
+  .goal, .goals.editing .goal { grid-template-columns: minmax(0, 1fr) auto auto; row-gap: 10px; }
+  .goal-name { grid-column: 1 / -1; }
+  .goal-count { gap: 4px; }
+  .goal-pct { margin-left: 4px; }
+}
+
+@media (max-width: 780px) { .practice-tile::before { outline: 1px solid var(--chart-edge); } }

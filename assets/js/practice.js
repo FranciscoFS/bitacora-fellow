@@ -54,9 +54,20 @@ window.BF = window.BF || {};
     const role = $('#practiceRole').selectedOptions[0].textContent;
     $('#practiceContext').textContent = `${total} ${total===1?'caso registrado':'casos registrados'} · ${period} · ${role}`;
     $('#practiceDates').textContent = currentScope.desde ? `${fmtDate(currentScope.desde)} – ${fmtDate(currentScope.hasta)} · Sólo procedimiento principal.` : 'Todo el historial · Sólo procedimiento principal.';
-    $('#practiceTiles').classList.toggle('practice-small',total<5 || tiles.length<3 || tiles.some(p=>p.value/total<.04));
+    const host = $('#practiceTiles');
+    const width = host.clientWidth;
+    const boxes = layout(tiles, width ? width / 320 : 2);
+    const needsRows = total < 5 || tiles.length < 3 || boxes.some(p => {
+      const tileWidth = p.w * width / 100, tileHeight = p.h * 320 / 100;
+      const labelCapacity = Math.floor((tileWidth - 28) / 8) * Math.floor((tileHeight - 70) / 20);
+      return tileWidth < 145 || tileHeight < 100 || p.name.length > labelCapacity;
+    });
+    host.classList.toggle('practice-small', needsRows);
+    $('#practiceEncodingHint').textContent = (needsRows
+      ? 'El número y el porcentaje indican la frecuencia.'
+      : 'Mayor superficie = más casos.') + ' Abre un procedimiento para consultar sus registros. Frecuencia registrada, no nivel de competencia.';
     const max = Math.max(1,...tiles.map(p=>p.value));
-    $('#practiceTiles').innerHTML = layout(tiles).map((p,i)=>`<button class="practice-tile" type="button" data-practice-index="${i}" data-practice-tone="${Math.min(3,Math.floor((1-p.value/max)*4))}" style="--x:${p.x}%;--y:${p.y}%;--w:${p.w}%;--h:${p.h}%;--bar:${p.value/max*100}%"><strong>${esc(p.name)}</strong><span>${p.value} ${p.value===1?'caso':'casos'} <small>· ${Math.round(p.value/total*100)}%</small></span></button>`).join('') || '<p class="empty">No hay casos en este período y participación. Cambia los filtros o registra un caso.</p>';
+    host.innerHTML = boxes.map((p,i)=>`<button class="practice-tile" type="button" data-practice-index="${i}" data-practice-tone="${Math.min(3,Math.floor((1-p.value/max)*4))}" style="--x:${p.x}%;--y:${p.y}%;--w:${p.w}%;--h:${p.h}%;--bar:${p.value/max*100}%"><strong>${esc(p.name)}</strong><span>${p.value} ${p.value===1?'caso':'casos'} <small>· ${Math.round(p.value/total*100)}%</small></span></button>`).join('') || '<p class="empty">No hay casos en este período y participación. Cambia los filtros o registra un caso.</p>';
     $('#practiceAll').disabled = !total;
   }
   function openScope(procedures, name) {
@@ -77,6 +88,14 @@ window.BF = window.BF || {};
     });
     $('#practiceAll').addEventListener('click',()=>openScope(undefined,'Todos los procedimientos'));
     S.on('change',render);
+    // Width changes when switching layout or returning from another view.
+    if (typeof ResizeObserver !== 'undefined') {
+      let previousWidth = -1;
+      new ResizeObserver(([entry]) => {
+        const width = Math.round(entry.contentRect.width);
+        if (width && width !== previousWidth) { previousWidth = width; render(); }
+      }).observe($('#practiceTiles'));
+    }
     render();
   }
   BF.practice = { init, render, dateRange, matches, summarize, layout };

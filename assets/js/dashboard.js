@@ -243,6 +243,17 @@ window.BF = window.BF || {};
   }
 
   function init() {
+    const layoutButtons = Array.from(document.querySelectorAll('[data-dashboard-layout]'));
+    const setLayout = (value) => {
+      const layout = value === 'single' ? 'single' : 'split';
+      $('#view-dashboard').dataset.layout = layout;
+      layoutButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.dashboardLayout === layout)));
+    };
+    setLayout(BF.util.store.get('dashboardLayout', 'split'));
+    layoutButtons.forEach((button) => button.addEventListener('click', () => {
+      setLayout(button.dataset.dashboardLayout);
+      BF.util.store.set('dashboardLayout', button.dataset.dashboardLayout);
+    }));
     fillFilterSelects();
     $('#filterForm').addEventListener('input', render);
     $('#filterForm').addEventListener('change', render);
