@@ -32,3 +32,6 @@ Nombre Bitácora Fellow. Español. Light mode como punto de partida. El usuario 
 - Distinguir datos del período de metas acumuladas.
 - Comunicar guardado y selección con texto y estado visual.
 - Usar demostraciones explícitamente ficticias al explorar diseño.
+# Dirección aprobada
+
+El usuario eligió Cuaderno digital y aprobó un mosaico proporcional de procedimientos frecuentes para escritorio, ranking para móvil, filtros de 4/12 semanas o todo el historial, participación y apertura de los casos correspondientes. Se implementa primero en la maqueta pública para evaluación.

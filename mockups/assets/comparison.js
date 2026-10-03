@@ -16,5 +16,6 @@
   document.querySelectorAll('[data-style]').forEach(n=>n.addEventListener('click',()=>{$('#leftStyle').value=n.dataset.style;update();}));
   $('#compareMode').addEventListener('click',()=>{comparing=!comparing;update();});
   for(const id of ['leftStyle','rightStyle','previewState'])$('#'+id).addEventListener('change',update);
+  $('#leftStyle').value='daybook';
   update();
 })();
