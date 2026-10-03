@@ -50,14 +50,14 @@ window.BF = window.BF || {};
     $('#kpis').innerHTML = [
       kpi({ label: 'Casos totales', value: m.total, hint: `${m.delAnio} en ${new Date().getFullYear()}` }),
       kpi({ label: 'Como cirujano', value: m.comoCirujano, hint: `${m.pctCirujano}% del total`, tone: 'accent' }),
-      kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
+      kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
       kpi({
         label: 'Complicaciones intraop.', value: m.complicaciones,
         hint: `${m.tasaComplicaciones}% de los casos`,
         tone: m.total ? (m.complicaciones ? 'bad' : 'good') : ''
       }),
       kpi({ label: 'Duración promedio', value: num1(m.duracionPromedio, ' min'), hint: 'promedio de los tiempos registrados' }),
-      kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
+      kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
       kpi({ label: 'Isquemia promedio', value: num1(m.isquemiaPromedio, ' min'), hint: 'casos con torniquete' }),
       kpi({ label: 'Duración mediana', value: num1(m.duracionMediana, ' min'), hint: 'valor central de los tiempos registrados' })
     ].join('');
@@ -111,11 +111,6 @@ window.BF = window.BF || {};
     // Casos por mes (rellenando meses sin actividad)
     if (m.porMes.length) {
       const keys = monthRange(m.porMes[0].key, m.porMes[m.porMes.length - 1].key);
-      const map = new Map(m.porMes.map((d) => [d.key, d.value]));
-      const serie = keys.map((k) => ({ key: k, label: fmtMonth(k), value: map.get(k) || 0 }));
-      Ch.bars($('#chartPorMes'), serie, { aria: 'casos por mes' });
-      $('#capPorMes').textContent = `${keys.length} mes(es) · pico ${Math.max(...serie.map((d) => d.value))}`;
-
       const cumMap = new Map(m.porMesCirujano.map((d) => [d.key, d.value]));
       let acc = 0;
       const acum = keys.map((k) => {
@@ -124,9 +119,7 @@ window.BF = window.BF || {};
       });
       Ch.line($('#chartCirujano'), acum.length ? acum : [], { aria: 'casos como cirujano acumulados' });
     } else {
-      Ch.empty($('#chartPorMes'), 'Sin casos registrados todavía');
       Ch.empty($('#chartCirujano'), 'Sin casos como cirujano todavía');
-      $('#capPorMes').textContent = '';
     }
 
     Ch.donut($('#chartRol'), m.porRol, { centerLabel: 'casos', aria: 'participación por rol' });
@@ -151,8 +144,8 @@ window.BF = window.BF || {};
     $('#goalMode').checked = soloCirujano;
 
     $('#goalsSummary').innerHTML = filas.length
-      ? `<b>${cumplidas}</b> de ${filas.length} meta(s) cumplidas · ` +
-        `${base.length} caso(s) computados ${soloCirujano ? 'como cirujano' : 'en cualquier rol'}`
+      ? `<b>${cumplidas}</b> de ${filas.length} ${filas.length === 1 ? 'meta cumplida' : 'metas cumplidas'} · ` +
+        `${base.length} ${base.length === 1 ? 'caso computado' : 'casos computados'} ${soloCirujano ? 'como cirujano' : 'en cualquier rol'}`
       : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
 
     $('#progressList').innerHTML = filas.map((f) => `
@@ -202,21 +195,36 @@ window.BF = window.BF || {};
 
   /* ───────── Render general ───────── */
 
+  function renderOverview() {
+    const cases = S.sorted(), m = S.metrics(cases);
+    $('.daybook-activity').hidden = !cases.length;
+    $('#personalSummary').hidden = !cases.length;
+    $('#daybookOverview').classList.toggle('is-empty',!cases.length);
+    $('#personalSummary').innerHTML = [[m.total,'casos registrados'],[m.comoCirujano,'como cirujano'],[num1(m.duracionTotal/60),'horas']].map(([value,label])=>`<div><b>${esc(value)}</b><span>${label}</span></div>`).join('');
+    $('#recentCases').innerHTML = cases.slice(0,4).map(c=>`<button class="recent-case" type="button" data-recent-id="${esc(c.id)}"><span class="muted small">${esc(BF.util.fmtDate(c.fecha))}</span><span><strong>${esc(c.procedimientoPrincipal||'Sin procedimiento')}</strong><small class="muted">${esc(c.lateralidad||'Sin lateralidad')} · ${esc(c.codigo)}</small></span><span aria-hidden="true">→</span></button>`).join('');
+    if (m.porMes.length) {
+      const keys=monthRange(m.porMes[0].key,m.porMes[m.porMes.length-1].key);
+      const values=new Map(m.porMes.map(d=>[d.key,d.value]));
+      Ch.bars($('#chartPorMes'),keys.map(key=>({key,label:fmtMonth(key),value:values.get(key)||0})),{aria:'Casos por mes, todo el historial'});
+      $('#capPorMes').textContent='Todo el historial';
+    } else { Ch.empty($('#chartPorMes'),'Sin casos registrados');$('#capPorMes').textContent=''; }
+  }
+
   function render() {
     const f = getFilters();
     const casos = S.filter(f);
     const m = S.metrics(casos);
     const vacio = S.all().length === 0;
+    renderOverview();
 
     $('#btnClearFilters').hidden = !hasFilters(f) || vacio;
-    $('#dashSubtitle').textContent = hasFilters(f)
-      ? `${casos.length} caso(s) según los filtros aplicados.`
-      : `${S.all().length} caso(s) en total.`;
+    $('#dashSubtitle').textContent = 'Retoma donde quedaste o registra la cirugía de hoy.';
 
     /* Con la bitácora vacía, ocho KPI en cero y cinco gráficos "sin datos" no
        comunican nada: se muestran una guía de arranque y la tarjeta de metas
        (que sí sirve antes de cargar el primer caso). */
     $('#gettingStarted').hidden = !vacio;
+    $('.advanced-analysis').hidden = vacio;
     $('#dashboardData').hidden = vacio;
     $('#chartsGrid').hidden = vacio || !casos.length;
     $('#kpis').hidden = !casos.length;
@@ -235,12 +243,26 @@ window.BF = window.BF || {};
   }
 
   function init() {
+    const layoutButtons = Array.from(document.querySelectorAll('[data-dashboard-layout]'));
+    const setLayout = (value) => {
+      const layout = value === 'single' ? 'single' : 'split';
+      $('#view-dashboard').dataset.layout = layout;
+      layoutButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.dashboardLayout === layout)));
+    };
+    setLayout(BF.util.store.get('dashboardLayout', 'split'));
+    layoutButtons.forEach((button) => button.addEventListener('click', () => {
+      setLayout(button.dataset.dashboardLayout);
+      BF.util.store.set('dashboardLayout', button.dataset.dashboardLayout);
+    }));
     fillFilterSelects();
     $('#filterForm').addEventListener('input', render);
     $('#filterForm').addEventListener('change', render);
     const clearFilters = () => { $('#filterForm').reset(); render(); };
     $('#btnClearFilters').addEventListener('click', clearFilters);
     $('#btnResetFilters').addEventListener('click', clearFilters);
+    $('#recentCases').addEventListener('click',e=>{const button=e.target.closest('[data-recent-id]');if(button)BF.bitacora.open(button.dataset.recentId);});
+    $('#btnRecentAll').addEventListener('click',()=>{BF.bitacora.clearScope();BF.app.show('bitacora');});
+    BF.practice.init();
     $('#btnEditGoals').addEventListener('click', () => {
       editingGoals = !editingGoals;
       $('#goalsEditor').hidden = !editingGoals;

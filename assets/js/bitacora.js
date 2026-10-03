@@ -9,6 +9,9 @@ window.BF = window.BF || {};
   let current = null;      // caso abierto en el panel
   let armado = null;       // temporizador de la confirmación en dos pasos
   let focoPrevio = null;   // elemento que tenía el foco antes de abrir el panel
+  let scope = null;
+  function setScope(value, label) { scope = value; $('#listScopeText').textContent=label; $('#tableSearch').value='';render(); }
+  function clearScope() { scope=null;$('#tableSearch').value='';render(); }
 
   /* ───────── Foco del panel (diálogo accesible) ───────── */
 
@@ -64,6 +67,7 @@ window.BF = window.BF || {};
   }
 
   function render() {
+    $('#listScope').hidden=!scope;
     const q = $('#tableSearch').value.trim().toLowerCase();
     const rows = visibleCases();
     const tbody = $('#caseTable tbody');
@@ -73,15 +77,15 @@ window.BF = window.BF || {};
       const complLabel = 'Intraop.';
       const lat = (c.lateralidad || '').charAt(0) || '—';
       return `<tr data-id="${c.id}">
-        <td><button class="code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.codigo)}</button></td>
+        <td class="wrap-cell"><button class="procedure-link code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.procedimientoPrincipal || 'Sin procedimiento')}</button>
+          ${c.procedimientosAsociados.length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}</td>
         <td>${esc(fmtDate(c.fecha))}</td>
         <td><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || '—')}</span></td>
-        <td class="wrap-cell" title="${esc(c.procedimientoPrincipal)}">${esc(c.procedimientoPrincipal || '—')}
-          ${c.procedimientosAsociados.length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}</td>
+        <td class="case-code">${esc(c.codigo)}</td>
         <td>${esc(c.lateralidad || '—')}</td>
         <td>${esc(c.abordaje || '—').replace('Artroscópico + mini-abierto', 'Artro + mini')}</td>
         <td class="num">${c.duracionMin ?? '—'}</td>
-        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="pill good">No</span>'}</td>
+        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="muted">No</span>'}</td>
         <td class="col-actions"><button class="icon-btn" data-act="edit" title="Editar" aria-label="Editar">✎</button></td>
       </tr>`;
     }).join('');
@@ -90,7 +94,7 @@ window.BF = window.BF || {};
     const total = S.all().length;
     $('#tableCount').textContent = total === 0
       ? 'Todavía no hay casos registrados.'
-      : `${rows.length} de ${total} caso(s) · ${S.metrics(rows).duracionTotal} min acumulados`;
+      : `${rows.length} de ${total} ${total === 1 ? 'caso' : 'casos'} · ${S.metrics(rows).duracionTotal} min acumulados`;
     $('#tableEmpty').hidden = rows.length > 0;
     $('#caseTable').hidden = rows.length === 0;
     $('#tableWrap').hidden = rows.length === 0;
@@ -100,7 +104,7 @@ window.BF = window.BF || {};
     $('#btnExportList').textContent = `Exportar resultados (${rows.length})`;
     $('#btnExportList').disabled = !rows.length;
   }
-  function visibleCases() { const q = $('#tableSearch').value.trim().toLowerCase(); return sortCases(q ? S.filter({ q }) : S.all()); }
+  function visibleCases() { const q = $('#tableSearch').value.trim().toLowerCase(); const list=q?S.filter({q}):S.all();return sortCases(scope?list.filter(c=>BF.practice.matches(c,scope)):list); }
 
   /* ───────── Modal de detalle ───────── */
 
@@ -201,7 +205,8 @@ window.BF = window.BF || {};
     $('#tableSearch').addEventListener('input', search);
     $('#tableSort').addEventListener('change', render);
     $('#btnNewFromList').addEventListener('click', () => BF.form.startNew());
-    $('#btnClearSearch').addEventListener('click', () => { $('#tableSearch').value = ''; render(); });
+    $('#btnClearSearch').addEventListener('click', () => { $('#tableSearch').value='';render(); });
+    $('#btnClearScope').addEventListener('click', clearScope);
     $('#btnExportList').addEventListener('click', () => BF.exporter.exportCsv(visibleCases()));
 
     $('#modalClose').addEventListener('click', close);
@@ -225,5 +230,5 @@ window.BF = window.BF || {};
     render();
   }
 
-  BF.bitacora = { init, render, open, close };
+  BF.bitacora = { init, render, open, close, setScope, clearScope };
 })();

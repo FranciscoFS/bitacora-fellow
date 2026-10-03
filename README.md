@@ -68,6 +68,7 @@ Abre <http://localhost:8765/>. También puedes abrir `index.html` directamente, 
 | Encontrar los módulos del proyecto | [Estructura del código](docs/guia-de-uso.md#6-estructura-del-proyecto) |
 | Adaptar procedimientos, campos o metas iniciales | [Personalización](docs/guia-de-uso.md#9-personalizar) |
 | Entender la interfaz y sus criterios | [Implementación UI/UX](docs/implementacion-ui-ux.md) · [Paleta institucional](docs/paleta-institucional.md) |
+| Conocer el cuaderno digital y la frecuencia de procedimientos | [Diseño e implementación](docs/daybook-implementation.md) |
 
 Para validar cambios en la app, ejecuta las pruebas de regresión con Node.js:
 

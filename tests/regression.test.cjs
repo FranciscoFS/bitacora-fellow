@@ -21,7 +21,7 @@ function app({ choices = [], storageFails = false } = {}) {
     }
   });
   context.window = context;
-  for (const file of ['config', 'util', 'store']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', `${file}.js`), 'utf8'), context);
+  for (const file of ['config', 'util', 'store', 'practice']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', `${file}.js`), 'utf8'), context);
   context.BF.util.choose = async (options) => { messages.push(options); return choices.shift() ?? null; };
   context.BF.util.toast = () => {};
   context.BF.util.download = (name, content) => downloads.push({ name, content });
@@ -31,6 +31,41 @@ function app({ choices = [], storageFails = false } = {}) {
 }
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
+
+test('La práctica reciente respeta fechas inclusivas, año, DST y el rol de cirujano', () => {
+  const { context } = app(), P=context.BF.practice;
+  assert.deepEqual(json(P.dateRange('28','2026-10-02')),{desde:'2026-09-05',hasta:'2026-10-02'});
+  assert.deepEqual(json(P.dateRange('84','2026-01-03')),{desde:'2025-10-12',hasta:'2026-01-03'});
+  assert.deepEqual(json(P.dateRange('28','2024-03-01')),{desde:'2024-02-03',hasta:'2024-03-01'});
+  const cases=[caso('before',{fecha:'2026-09-04'}),caso('start',{fecha:'2026-09-05'}),caso('end',{fecha:'2026-10-02',rol:'Cirujano (independiente)'}),caso('future',{fecha:'2026-10-03'}),caso('observer',{rol:'Observador'}),caso('missing',{fecha:''})];
+  const scope={...P.dateRange('28','2026-10-02'),role:'surgeon'};
+  assert.equal(P.summarize(cases,scope).total,2);
+  assert.equal(P.summarize(cases,{...scope,role:'Observador'}).total,1);
+  assert.equal(P.summarize(cases,{...P.dateRange('all'),role:''}).total,6);
+});
+
+test('El mosaico cuenta principales una vez, agrupa la cola y permite abrir el mismo conjunto', () => {
+  const { context }=app(), P=context.BF.practice;
+  const cases=Array.from({length:9},(_,i)=>caso(String(i),{procedimientoPrincipal:'Procedimiento '+i,procedimientosAsociados:['Procedimiento 0']}));
+  cases.push(caso('repeat',{procedimientoPrincipal:'Procedimiento 0'}));
+  const scope={role:''}, summary=P.summarize(cases,scope);
+  assert.equal(summary.total,10);assert.equal(summary.procedures[0].value,2);
+  assert.equal(summary.tiles.length,6);assert.equal(summary.tiles[5].value,4);
+  for(const tile of summary.tiles)assert.equal(cases.filter(c=>P.matches(c,{...scope,procedures:tile.procedures})).length,tile.value);
+  assert.equal(P.summarize([],scope).tiles.length,0);
+});
+
+test('Los rectángulos cubren el mosaico sin solaparse y su área corresponde al conteo', () => {
+  const { context }=app(), P=context.BF.practice;
+  const boxes=P.layout([{value:40},{value:20},{value:15},{value:10},{value:8},{value:7}]);
+  assert.ok(Math.abs(boxes.reduce((s,p)=>s+p.w*p.h,0)-10000)<1e-8);
+  boxes.forEach(p=>assert.ok(Math.abs(p.w*p.h/100-p.value)<1e-8));
+  for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+    const a=boxes[i],b=boxes[j];
+    const overlapW=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),overlapH=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+    assert.ok(overlapW<1e-8||overlapH<1e-8);
+  }
+});
 
 test('Las metas agrupadas cuentan cada caso una vez y respetan el criterio de cirujano', () => {
   const { S } = app(); const ptr = 'Prótesis total de rodilla (PTR)', robot = 'Prótesis total con navegación/robótica';
