@@ -224,6 +224,7 @@ window.BF = window.BF || {};
        comunican nada: se muestran una guía de arranque y la tarjeta de metas
        (que sí sirve antes de cargar el primer caso). */
     $('#gettingStarted').hidden = !vacio;
+    $('.advanced-analysis').hidden = vacio;
     $('#dashboardData').hidden = vacio;
     $('#chartsGrid').hidden = vacio || !casos.length;
     $('#kpis').hidden = !casos.length;

@@ -56,7 +56,7 @@ window.BF = window.BF || {};
     $('#practiceDates').textContent = currentScope.desde ? `${fmtDate(currentScope.desde)} – ${fmtDate(currentScope.hasta)} · Sólo procedimiento principal.` : 'Todo el historial · Sólo procedimiento principal.';
     $('#practiceTiles').classList.toggle('practice-small',total<5 || tiles.length<3 || tiles.some(p=>p.value/total<.04));
     const max = Math.max(1,...tiles.map(p=>p.value));
-    $('#practiceTiles').innerHTML = layout(tiles).map((p,i)=>`<button class="practice-tile" type="button" data-practice-index="${i}" style="--x:${p.x}%;--y:${p.y}%;--w:${p.w}%;--h:${p.h}%;--bar:${p.value/max*100}%;--tile-color:hsl(204 65% ${92-16*p.value/Math.max(max,p.value)}%)"><strong>${esc(p.name)}</strong><span>${p.value} ${p.value===1?'caso':'casos'} <small>· ${Math.round(p.value/total*100)}%</small></span></button>`).join('') || '<p class="empty">No hay casos en este período y participación. Cambia los filtros o registra un caso.</p>';
+    $('#practiceTiles').innerHTML = layout(tiles).map((p,i)=>`<button class="practice-tile" type="button" data-practice-index="${i}" data-practice-tone="${Math.min(3,Math.floor((1-p.value/max)*4))}" style="--x:${p.x}%;--y:${p.y}%;--w:${p.w}%;--h:${p.h}%;--bar:${p.value/max*100}%"><strong>${esc(p.name)}</strong><span>${p.value} ${p.value===1?'caso':'casos'} <small>· ${Math.round(p.value/total*100)}%</small></span></button>`).join('') || '<p class="empty">No hay casos en este período y participación. Cambia los filtros o registra un caso.</p>';
     $('#practiceAll').disabled = !total;
   }
   function openScope(procedures, name) {

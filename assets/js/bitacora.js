@@ -205,7 +205,7 @@ window.BF = window.BF || {};
     $('#tableSearch').addEventListener('input', search);
     $('#tableSort').addEventListener('change', render);
     $('#btnNewFromList').addEventListener('click', () => BF.form.startNew());
-    $('#btnClearSearch').addEventListener('click', clearScope);
+    $('#btnClearSearch').addEventListener('click', () => { $('#tableSearch').value='';render(); });
     $('#btnClearScope').addEventListener('click', clearScope);
     $('#btnExportList').addEventListener('click', () => BF.exporter.exportCsv(visibleCases()));
 
