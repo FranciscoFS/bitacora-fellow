@@ -25,3 +25,10 @@ Se mantiene el cuaderno digital, los botones amarillos y el complemento celeste.
 - Texto blanco en los cuatro tonos claros: 7,40 / 5,75 / 5,23 / 4,73:1. Se verifica también el conjunto oscuro.
 - Detector mecánico Impeccable: sin hallazgos en los archivos modificados.
 - Capturas: [dos columnas](capturas/layout-two-columns.png), [una columna](capturas/layout-one-column.png), [móvil](capturas/layout-mobile.png).
+## Ajuste para uso personal
+
+Feedback posterior de Fran: se centra la vista de una columna con márgenes automáticos; los KPI globales se muestran primero, seguidos de metas y frecuencia de procedimientos. En dos columnas, metas a la izquierda y frecuencia a la derecha; el gráfico mensual queda debajo de frecuencia. La lista de casos recientes se elimina del inicio: los registros siguen en Bitácora.
+
+Se eliminan las bajadas de bienvenida, las explicaciones repetidas de metas y frecuencia y el detalle duplicado de período/rol. Permanecen títulos breves, etiquetas de filtros, estado vacío, avisos de guardado y marca de demostración. El resumen de metas muestra cumplidas/total. La edición y la sincronización no cambian.
+
+Validación: 28 pruebas aprobadas, sintaxis JS y diff comprobados; escritorio 1280 px y móvil 390 px sin desbordamiento. Capturas `home-compact-centered.png` y `home-compact-mobile.png`.

@@ -185,3 +185,11 @@ body{font-size:15px}.topbar{background:var(--bg);border-bottom:0;box-shadow:none
 }
 
 @media (max-width: 780px) { .practice-tile::before { outline: 1px solid var(--chart-edge); } }
+/* Personal dashboard: summary, goals and procedures before secondary analysis. */
+#view-dashboard[data-layout="single"] { margin-inline: auto; }
+#view-dashboard > .personal-summary { padding-top: 0; margin-bottom: 28px; }
+.daybook-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+.practice-panel .section-heading { margin-bottom: 0; }
+.practice-context { margin-block: 12px; }
+@media (max-width: 980px) { .daybook-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); } }
+@media (max-width: 780px) { .daybook-layout { grid-template-columns: minmax(0, 1fr); } }

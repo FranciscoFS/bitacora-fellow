@@ -144,8 +144,7 @@ window.BF = window.BF || {};
     $('#goalMode').checked = soloCirujano;
 
     $('#goalsSummary').innerHTML = filas.length
-      ? `<b>${cumplidas}</b> de ${filas.length} ${filas.length === 1 ? 'meta cumplida' : 'metas cumplidas'} · ` +
-        `${base.length} ${base.length === 1 ? 'caso computado' : 'casos computados'} ${soloCirujano ? 'como cirujano' : 'en cualquier rol'}`
+      ? `<b>${cumplidas}</b> / ${filas.length} cumplidas`
       : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
 
     $('#progressList').innerHTML = filas.map((f) => `
@@ -201,7 +200,6 @@ window.BF = window.BF || {};
     $('#personalSummary').hidden = !cases.length;
     $('#daybookOverview').classList.toggle('is-empty',!cases.length);
     $('#personalSummary').innerHTML = [[m.total,'casos registrados'],[m.comoCirujano,'como cirujano'],[num1(m.duracionTotal/60),'horas']].map(([value,label])=>`<div><b>${esc(value)}</b><span>${label}</span></div>`).join('');
-    $('#recentCases').innerHTML = cases.slice(0,4).map(c=>`<button class="recent-case" type="button" data-recent-id="${esc(c.id)}"><span class="muted small">${esc(BF.util.fmtDate(c.fecha))}</span><span><strong>${esc(c.procedimientoPrincipal||'Sin procedimiento')}</strong><small class="muted">${esc(c.lateralidad||'Sin lateralidad')} · ${esc(c.codigo)}</small></span><span aria-hidden="true">→</span></button>`).join('');
     if (m.porMes.length) {
       const keys=monthRange(m.porMes[0].key,m.porMes[m.porMes.length-1].key);
       const values=new Map(m.porMes.map(d=>[d.key,d.value]));
@@ -218,7 +216,6 @@ window.BF = window.BF || {};
     renderOverview();
 
     $('#btnClearFilters').hidden = !hasFilters(f) || vacio;
-    $('#dashSubtitle').textContent = 'Retoma donde quedaste o registra la cirugía de hoy.';
 
     /* Con la bitácora vacía, ocho KPI en cero y cinco gráficos "sin datos" no
        comunican nada: se muestran una guía de arranque y la tarjeta de metas
@@ -260,8 +257,6 @@ window.BF = window.BF || {};
     const clearFilters = () => { $('#filterForm').reset(); render(); };
     $('#btnClearFilters').addEventListener('click', clearFilters);
     $('#btnResetFilters').addEventListener('click', clearFilters);
-    $('#recentCases').addEventListener('click',e=>{const button=e.target.closest('[data-recent-id]');if(button)BF.bitacora.open(button.dataset.recentId);});
-    $('#btnRecentAll').addEventListener('click',()=>{BF.bitacora.clearScope();BF.app.show('bitacora');});
     BF.practice.init();
     $('#btnEditGoals').addEventListener('click', () => {
       editingGoals = !editingGoals;
