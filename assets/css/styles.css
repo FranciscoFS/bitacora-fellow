@@ -854,3 +854,54 @@ input[type=checkbox] { min-height: 0; }
   .picker-categories button { min-height: 44px; padding: 8px 2px; font-size: .7rem; }
   .view-head h2 { font-size: 2.25rem; }
 }
+
+/* Direct case entry: short choices stay visible. */
+#view-nuevo .view-head { margin-bottom: 24px; }
+#view-nuevo .draft-status:empty { display: none; }
+#view-nuevo .draft-status { margin: -12px 0 16px; font-size: .8rem; }
+#caseForm .essential-fields > legend.sr-only { float: none; width: 1px; margin: 0; }
+#caseForm .essential-grid { grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr); gap: 24px; }
+#caseForm .quick-rol, #caseForm .quick-abordaje { grid-column: 1 / -1; }
+.quick-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.quick-options button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: .875rem; line-height: 1.4; cursor: pointer; transition: background var(--dur), border-color var(--dur); }
+.quick-options button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.quick-options button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.quick-options button:focus-visible, #caseForm .catalog-option:focus-visible, #caseForm .diagnosis-options button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.quick-options[aria-invalid] { border-left: 3px solid var(--danger); padding-left: 8px; }
+#caseForm .quick-lateralidad .quick-options button { flex: 1; }
+#caseForm .clinical-workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+#caseForm .clinical-picker { padding: 0; border: 0; border-radius: 0; background: transparent; gap: 12px; }
+#caseForm .procedure-picker > h3 { font-size: .875rem; font-weight: 600; letter-spacing: 0; margin: 0; }
+#caseForm .procedure-catalog { display: grid; gap: 12px; }
+#caseForm .picker-results { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 320px; }
+#caseForm .catalog-option { min-height: 56px; padding: 10px 12px; }
+#caseForm .selected-procedure { min-height: 48px; padding: 8px 12px; }
+#caseForm .selected-procedure strong { flex: 1; }
+#caseForm .selected-procedure .btn { flex: none; font-size: .8rem; padding: 6px 10px; }
+#caseForm .diagnosis-options { margin-top: -4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+#caseForm .diagnosis-options button { min-height: 44px; padding: 10px 14px; background: var(--surface); }
+#caseForm .diagnosis-options button:last-child { border-bottom: 0; }
+#caseForm .diagnosis-options button:hover { background: var(--accent-soft); }
+#caseForm .associated-picker { border-top: 1px solid var(--border); padding-top: 12px; }
+#caseForm .associated-picker summary { padding: 8px 0; }
+#caseForm .associated-content { display: grid; gap: 12px; padding-top: 12px; }
+#caseForm .personal-details { padding: 0; background: transparent; border: 0; }
+#caseForm .personal-details summary { padding: 8px 0; }
+#caseForm .personal-details .chips { margin-top: 12px; }
+#caseForm .optional-heading h3 { display: flex; align-items: center; gap: 12px; font-size: 1rem; }
+@media (max-width: 700px) {
+  #caseForm .essential-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  #caseForm .essential-grid > .field:nth-last-child(-n+2) { grid-column: auto; }
+  #caseForm .picker-results { grid-template-columns: minmax(0, 1fr); }
+  #caseForm .quick-rol .quick-options, #caseForm .quick-abordaje .quick-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #caseForm .quick-options button { padding: 10px 8px; font-size: .8rem; }
+  #caseForm .selected-procedure { flex-wrap: wrap; }
+}
+
+#caseForm .associated-picker > summary .optional-label, #caseForm .personal-details > summary .optional-label { display: inline; float: none; margin-left: 8px; border: 0; padding: 0; white-space: nowrap; }
+@media (max-width: 700px) { #caseForm .picker-results { max-height: none; overflow: visible; } }
+
+#caseForm .osteotomy-details { margin-top: 20px; }
+#caseForm .osteotomy-details h4 { font-size: .9rem; font-weight: 600; margin: 0; }
+#caseForm .osteotomy-details .grid { margin-top: 12px; }
+#caseForm .osteotomy-details .quick-options button { flex: 1; }

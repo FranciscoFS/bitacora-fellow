@@ -142,13 +142,14 @@ window.BF = window.BF || {};
     const cumplidas = filas.filter((f) => f.cumplida).length;
 
     $('#goalMode').checked = soloCirujano;
+    BF.home.renderFocus(filas, soloCirujano);
 
     $('#goalsSummary').innerHTML = filas.length
       ? `<b>${cumplidas}</b> / ${filas.length} cumplidas`
       : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
 
     $('#progressList').innerHTML = filas.map((f) => `
-      <div class="goal${f.cumplida ? ' cumplida' : ''}">
+      <div class="goal${f.cumplida ? ' cumplida' : ''}" data-goal-proc="${esc(f.proc)}">
         <span class="goal-name" title="${esc(f.members.join(' · '))}">${esc(f.proc)}${f.members.length > 1 ? `<small class="goal-group-label">${f.members.length} procedimientos combinados</small>` : ''}</span>
         <span class="goal-bar"><i style="--pct:${(Math.min(100, f.pct) / 100).toFixed(3)}"></i></span>
         <span class="goal-count">
@@ -199,11 +200,11 @@ window.BF = window.BF || {};
     $('.daybook-activity').hidden = !cases.length;
     $('#personalSummary').hidden = !cases.length;
     $('#daybookOverview').classList.toggle('is-empty',!cases.length);
-    $('#personalSummary').innerHTML = [[m.total,'casos registrados'],[m.comoCirujano,'como cirujano'],[num1(m.duracionTotal/60),'horas']].map(([value,label])=>`<div><b>${esc(value)}</b><span>${label}</span></div>`).join('');
+    BF.home.renderSummary(cases, m);
     if (m.porMes.length) {
       const keys=monthRange(m.porMes[0].key,m.porMes[m.porMes.length-1].key);
       const values=new Map(m.porMes.map(d=>[d.key,d.value]));
-      Ch.bars($('#chartPorMes'),keys.map(key=>({key,label:fmtMonth(key),value:values.get(key)||0})),{aria:'Casos por mes, todo el historial'});
+      Ch.monthly($('#chartPorMes'),keys.map(key=>({key,label:fmtMonth(key),value:values.get(key)||0})),{aria:'Casos por mes, todo el historial'});
       $('#capPorMes').textContent='Todo el historial';
     } else { Ch.empty($('#chartPorMes'),'Sin casos registrados');$('#capPorMes').textContent=''; }
   }
@@ -240,6 +241,7 @@ window.BF = window.BF || {};
   }
 
   function init() {
+    BF.home.init();
     const layoutButtons = Array.from(document.querySelectorAll('[data-dashboard-layout]'));
     const setLayout = (value) => {
       const layout = value === 'single' ? 'single' : 'split';

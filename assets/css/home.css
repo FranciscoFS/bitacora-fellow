@@ -1,0 +1,153 @@
+
+/* Home frames: cumulative experience above period-specific activity. */
+#view-dashboard { --home-ease: cubic-bezier(.22,.8,.3,1); }
+#view-dashboard .dashboard-layout-control { justify-content: flex-end; margin-bottom: 12px; }
+#view-dashboard > .view-head { margin-bottom: 24px; align-items: center; }
+#view-dashboard > .view-head h2 { font-size: clamp(2rem, 3.2vw, 3.3rem); line-height: 1.12; }
+.home-subtitle { margin: 8px 0 0; color: var(--muted); font-size: .85rem; }
+#view-dashboard .personal-summary { display: grid; grid-template-columns: 1.15fr .85fr .85fr 1.25fr; gap: 0; padding: 0; border: 0; border-radius: 20px; overflow: hidden; margin-bottom: 28px; background: var(--surface); }
+.home-stat, .home-recent { container-type: inline-size; min-width: 0; text-align: left; font: inherit; border: 0; color: var(--text); background: transparent; padding: 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; cursor: pointer; transition: background 220ms, box-shadow 220ms; }
+.home-stat-primary { background: var(--accent-soft); }
+.home-stat + .home-stat, .home-recent { border-left: 1px solid var(--border); }
+#view-dashboard .home-stat-label { font-size: .8125rem; line-height: 1.4; color: var(--muted); font-weight: 500; }
+#view-dashboard .home-stat b { font-size: clamp(1.8rem, 22cqi, 3.2rem); font-weight: 500; letter-spacing: -.055em; line-height: 1; padding-bottom: 4px; }
+#view-dashboard .home-stat-primary b { font-size: clamp(1.8rem, 26cqi, 4.2rem); }
+#view-dashboard .home-stat-link { display: flex; align-items: center; gap: 10px; margin-top: auto; font-size: .8125rem; line-height: 1.4; color: var(--accent); }
+#view-dashboard .home-stat-link > span { display: inline; color: inherit; font-size: 1rem; transition: transform 220ms; }
+.home-recent strong { font-size: 1rem; font-weight: 550; line-height: 1.4; text-wrap: pretty; }
+#view-dashboard .home-recent-date { font-size: .8125rem; line-height: 1.4; overflow-wrap: anywhere; color: var(--muted); }
+#view-dashboard .daybook-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+#view-dashboard .daybook-activity { order: 1; gap: 20px; }
+#view-dashboard .daybook-goals { order: 2; container-type: inline-size; display: grid; gap: 20px; }
+#view-dashboard .daybook-goals .progress-card { padding: 24px; background: var(--surface); border-radius: 18px; }
+#view-dashboard .practice-panel { padding: 24px; border-radius: 18px; }
+#view-dashboard .practice-panel .section-heading h3 { font-size: clamp(1rem, 5cqi, 1.15rem); line-height: 1.3; font-weight: 550; }
+#view-dashboard .practice-controls { grid-template-columns: minmax(0, 1fr); align-items: end; gap: 16px; }
+.home-period-control { display: grid; gap: 7px; min-width: 0; }
+.home-period-control > span { font-size: .8125rem; font-weight: 500; }
+.home-period-buttons { display: flex; gap: 3px; background: var(--surface-2); border-radius: 10px; padding: 4px; }
+.home-period-buttons button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: .8125rem; line-height: 1.35; padding: 9px 6px; min-height: 44px; min-width: 0; flex: 1; white-space: normal; border-radius: 7px; cursor: pointer; transition: background 180ms, color 180ms; }
+.home-period-buttons button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.home-period-buttons button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#view-dashboard .practice-context { margin: 18px 0 12px; font-size: .85rem; }
+#view-dashboard .practice-context::after { content: ' en el período'; color: var(--muted); }
+#view-dashboard .practice-tile { transition: transform 220ms var(--home-ease), box-shadow 220ms, background 220ms; }
+
+#view-dashboard .practice-tile strong { font-weight: 500; line-height: 1.4; }
+
+#view-dashboard .practice-tile > span { font-variant-numeric: tabular-nums; }
+.home-focus-button { display: grid; gap: 10px; text-align: left; width: 100%; padding: 22px 24px; border: 0; border-left: 4px solid var(--brand-yellow); border-radius: 0 16px 16px 0; color: var(--text); background: var(--accent-soft); font: inherit; cursor: pointer; transition: background 220ms, transform 220ms; }
+.home-focus-button strong { font-size: 1.05rem; line-height: 1.35; font-weight: 550; }
+.home-focus-progress { display: flex; gap: 5px; align-items: baseline; font-size: .85rem; }
+.home-focus-progress b { font-size: 1.7rem; font-weight: 500; letter-spacing: -.04em; }
+.home-focus-progress > span { margin-left: auto; font-size: 1.2rem; }
+.home-focus-note { color: var(--muted); font-size: .8125rem; line-height: 1.45; overflow-wrap: anywhere; }
+#view-dashboard .goal { transition: background 240ms; }
+#view-dashboard .goal.is-focused { background: var(--accent-soft); border-radius: 8px; outline: 2px solid var(--accent); outline-offset: 4px; }
+
+#view-dashboard .daybook-activity > .chart { padding: 22px 24px; border-radius: 18px; background: var(--surface); }
+#view-dashboard .getting-started { max-width: none; border-radius: 20px; padding: 28px; background: var(--surface); }
+#view-dashboard .getting-started h3 { font-size: clamp(1.6rem, 2.3vw, 2rem); letter-spacing: -.035em; font-weight: 550; }
+#view-dashboard .gs-steps { gap: 28px; margin-top: 24px; }
+#view-dashboard .advanced-analysis { margin-top: 28px; }
+#view-dashboard[data-layout="single"] .daybook-layout { grid-template-columns: minmax(0, 1fr); }
+#view-dashboard .daybook-layout.is-empty { display: block; }
+@media (hover: hover) and (pointer: fine) {
+  .home-stat:hover, .home-recent:hover { background: var(--accent-soft); box-shadow: inset 0 -3px var(--brand-yellow); }
+  .home-stat:hover .home-stat-link > span, .home-recent:hover .home-stat-link > span { transform: translate(3px, -3px); }
+  #view-dashboard .practice-tile:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 2px var(--practice-text), 0 8px 18px -12px var(--accent); }
+  .home-focus-button:hover { transform: translateY(-2px); }
+}
+@media (max-width: 980px) {
+  #view-dashboard .personal-summary { grid-template-columns: 1fr 1fr; }
+  .home-stat, .home-recent { padding: 22px; }
+  #view-dashboard .personal-summary > :nth-child(3), #view-dashboard .personal-summary > :nth-child(4) { border-top: 1px solid var(--border); }
+  #view-dashboard .personal-summary > :nth-child(3) { border-left: 0; }
+  #view-dashboard .practice-controls { grid-template-columns: 1fr; gap: 12px; }
+}
+@media (max-width: 780px) {
+  #view-dashboard .daybook-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  #view-dashboard > .view-head { align-items: flex-start; gap: 12px; }
+  #view-dashboard > .view-head h2 { font-size: clamp(1.75rem, 7vw, 2.2rem); }
+  #view-dashboard > .view-head .btn { padding: 11px 16px; font-size: .875rem; flex-shrink: 0; }
+  .home-subtitle { font-size: .875rem; max-width: 32ch; }
+  #view-dashboard .personal-summary { border-radius: 16px; }
+  .home-stat, .home-recent { padding: 18px 16px; gap: 10px; }
+  .home-recent strong { font-size: .875rem; overflow-wrap: anywhere; }
+  #view-dashboard .practice-panel, #view-dashboard .daybook-goals .progress-card { padding: 20px; }
+
+  #view-dashboard .practice-tile { color: var(--text); }
+  #view-dashboard .gs-steps { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #view-dashboard *, #view-dashboard *::before, #view-dashboard *::after { animation: none !important; transition: none !important; }
+  #view-dashboard .practice-tile:hover, .home-focus-button:hover { transform: none; }
+}
+@media print {
+  .home-period-buttons, .home-stat-link { display: none; }
+  #view-dashboard .personal-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Ordered procedure cards replace the role filter and the proportional bars. */
+#view-dashboard .practice-panel { container-type: inline-size; }
+#view-dashboard .home-period-control { max-width: 390px; }
+#view-dashboard .practice-tiles { position: static; height: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: 12px; margin: 16px 0 0; }
+#view-dashboard .practice-tile { container-type: inline-size; position: relative; inset: auto; width: auto; height: auto; min-width: 0; min-height: 164px; padding: 18px; border: 0; border-radius: 12px; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px; background: var(--accent-soft); color: var(--text); box-shadow: none; }
+#view-dashboard .practice-tile:first-child { background: var(--practice-1); color: var(--practice-text); }
+#view-dashboard .practice-tiles[data-odd="true"] .practice-tile:first-child { grid-column: 1 / -1; }
+#view-dashboard .practice-tile::before, #view-dashboard .practice-tile::after { content: none; display: none; }
+#view-dashboard .practice-tile strong { min-width: 0; max-width: none; font-size: clamp(.9375rem, 6cqi, 1.125rem); line-height: 1.4; text-wrap: pretty; overflow-wrap: anywhere; hyphens: none; }
+#view-dashboard .practice-tile span { min-width: 0; font-size: inherit; white-space: normal; font-weight: 400; }
+#view-dashboard .practice-card-top, #view-dashboard .practice-card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+#view-dashboard .practice-tile .practice-card-top { opacity: .8; font-size: .75rem; }
+#view-dashboard .practice-tile .practice-card-arrow { font-size: 1.1rem; line-height: 1; transition: transform 220ms; }
+#view-dashboard .practice-card-bottom { margin-top: auto; flex-wrap: wrap; row-gap: 10px; }
+#view-dashboard .practice-card-count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 6px; }
+#view-dashboard .practice-card-count b { font-size: clamp(1.75rem, 12cqi, 2.5rem); overflow-wrap: anywhere; font-weight: 500; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+#view-dashboard .practice-card-count small { display: inline; font-size: .8125rem; line-height: 1.35; }
+#view-dashboard .practice-tile .practice-card-share { font-size: .8125rem; line-height: 1.35; flex: none; padding: 5px 8px; border: 1px solid currentColor; border-radius: 24px; opacity: .8; font-variant-numeric: tabular-nums; }
+#view-dashboard .practice-more { width: 100%; margin-top: 14px; min-height: 44px; }
+#view-dashboard .practice-tiles > .empty, #view-dashboard .practice-tile:only-child { grid-column: 1 / -1; }
+#view-dashboard .practice-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  #view-dashboard .practice-tile:hover { box-shadow: inset 0 0 0 2px var(--accent); transform: translateY(-3px); }
+  #view-dashboard .practice-tile:first-child:hover { box-shadow: inset 0 0 0 2px var(--practice-text); }
+  #view-dashboard .practice-tile:hover .practice-card-arrow { transform: translate(2px, -2px); }
+}
+@container (min-width: 680px) {
+  #view-dashboard .practice-tiles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+  #view-dashboard .practice-tiles[data-odd="true"] .practice-tile:first-child { grid-column: auto; }
+}
+@media (max-width: 780px) {
+  #view-dashboard .practice-panel { padding: clamp(16px, 4vw, 20px); }
+  #view-dashboard .practice-tile { padding: 16px; min-height: 148px; gap: 12px; }
+  #view-dashboard .practice-panel .section-heading { align-items: flex-start; gap: 4px; }
+  #view-dashboard #practiceAll { padding: 8px 0; font-size: .8125rem; min-height: 44px; justify-content: flex-start; }
+  #view-dashboard .home-focus-button { padding: 18px; }
+  #view-dashboard .home-focus-button strong { font-size: clamp(.9375rem, 5cqi, 1.05rem); overflow-wrap: anywhere; }
+  #view-dashboard .home-focus-progress { flex-wrap: wrap; }
+  #view-dashboard .home-focus-progress b { font-size: 1.6rem; }
+  #view-dashboard .goal { gap: 8px; }
+  #view-dashboard .goal-name { font-size: .875rem; line-height: 1.45; }
+  #view-dashboard .goal-count { font-size: .8125rem; flex-wrap: wrap; }
+  #view-dashboard .goal-pct { font-size: .8125rem; }
+  #view-dashboard .practice-more { font-size: .875rem; white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { #view-dashboard .practice-tile:hover, #view-dashboard .practice-tile:hover .practice-card-arrow { transform: none; } }
+
+@container (max-width: 22rem) {
+  #view-dashboard .practice-panel .section-heading { flex-direction: column; }
+}
+
+/* Monthly plot: legible axes at the current panel width, with a translucent area. */
+#chartPorMes .monthly-plot { display: block; width: 100%; height: 224px; overflow: visible; }
+#chartPorMes .monthly-grid { stroke: var(--chart-edge); stroke-opacity: .2; stroke-width: 1; stroke-dasharray: 3 5; }
+#chartPorMes .monthly-axis { fill: var(--muted); font-family: var(--sans); font-size: 12px; font-variant-numeric: tabular-nums; }
+#chartPorMes .monthly-area { fill: var(--accent); fill-opacity: .16; }
+#chartPorMes .monthly-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#chartPorMes .monthly-dot { fill: var(--surface); stroke: var(--accent); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+#chartPorMes .monthly-dot:hover { fill: var(--accent); }
+#chartPorMes .chart-values { margin-top: 12px; }
+@media (max-width: 780px) {
+  #view-dashboard .daybook-activity > .chart { padding: 20px 16px; }
+}

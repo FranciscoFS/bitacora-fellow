@@ -144,6 +144,10 @@ window.BF = window.BF || {};
       ${row('Procedimientos asociados', (c.procedimientosAsociados || []).join(' · '))}
       ${row('Tipo de injerto · LCA', c.injertoLca)}
       ${row('Técnica de sutura meniscal', c.tecnicaMeniscal)}
+      ${row('Osteotomía tibial alta · tipo', c.osteotomiaTibialTipo)}
+      ${row('Osteotomía tibial alta · lado de la cuña', c.osteotomiaTibialLado)}
+      ${row('Osteotomía femoral distal · tipo', c.osteotomiaFemoralTipo)}
+      ${row('Osteotomía femoral distal · lado de la cuña', c.osteotomiaFemoralLado)}
       ${row('Hallazgos', c.hallazgos)}
       ${row('Implantes', c.implantes)}
 
