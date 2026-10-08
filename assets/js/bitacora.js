@@ -100,7 +100,19 @@ window.BF = window.BF || {};
     $('#btnExportList').textContent = `Exportar resultados (${rows.length})`;
     $('#btnExportList').disabled = !rows.length;
   }
-  function visibleCases() { const q = $('#tableSearch').value.trim().toLowerCase(); return sortCases(q ? S.filter({ q }) : S.all()); }
+  let frequentScope = null;
+  function setFrequentScope(scope, label = '') {
+    frequentScope = scope;
+    $('#frequentScope').hidden = !scope;
+    $('#frequentScopeLabel').textContent = label;
+    $('#tableSearch').value = '';
+    render();
+  }
+  function visibleCases() {
+    const query = $('#tableSearch').value.trim().toLowerCase();
+    const cases = query ? S.filter({ q: query }) : S.all();
+    return sortCases(frequentScope ? cases.filter((caso) => caso.procedimientoPrincipal === frequentScope.procedure && (!frequentScope.from || caso.fecha >= frequentScope.from) && (!frequentScope.to || caso.fecha <= frequentScope.to)) : cases);
+  }
 
   /* ───────── Modal de detalle ───────── */
 
@@ -225,5 +237,5 @@ window.BF = window.BF || {};
     render();
   }
 
-  BF.bitacora = { init, render, open, close };
+  BF.bitacora = { init, render, open, close, setFrequentScope };
 })();

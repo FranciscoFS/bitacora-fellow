@@ -10,6 +10,26 @@ window.BF = window.BF || {};
 
   const num1 = (v, suffix = '') => (v == null ? '—' : `${Math.round(v * 10) / 10}${suffix}`);
 
+  let frequentRange = {};
+  function renderFrequent() {
+    const period = $('#frequentPeriod').value;
+    const today = BF.util.todayISO();
+    let from = '';
+    if (period === 'year') from = today.slice(0, 4) + '-01-01';
+    else if (period !== 'all') {
+      const date = new Date(today + 'T12:00:00');
+      date.setDate(date.getDate() - Number(period) + 1);
+      from = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+    frequentRange = { from, to: period === 'all' ? '' : today };
+    const cases = S.all().filter((caso) => (!from || caso.fecha >= from) && (!frequentRange.to || caso.fecha <= frequentRange.to));
+    const counts = new Map();
+    cases.forEach((caso) => { if (caso.procedimientoPrincipal) counts.set(caso.procedimientoPrincipal, (counts.get(caso.procedimientoPrincipal) || 0) + 1); });
+    const top = [...counts].sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0], 'es')).slice(0, 3);
+    $('#frequentContext').textContent = `${cases.length} casos · Solo procedimiento principal`;
+    $('#frequentCards').innerHTML = top.map(([procedure, count]) => `<button class="frequent-card" type="button" data-frequent-procedure="${esc(procedure)}"><span class="frequent-name">${esc(procedure)}</span><strong>${count} <small>${count === 1 ? 'caso' : 'casos'}</small></strong><span class="muted small">${Math.round(count / cases.length * 100)}% del período</span></button>`).join('') || '<p class="empty">No hay cirugías registradas en este período.</p>';
+  }
+
   /* ───────── Filtros ───────── */
 
   function fillFilterSelects() {
@@ -146,16 +166,33 @@ window.BF = window.BF || {};
     const soloCirujano = S.getGoalMode() === 'cirujano';
     const base = soloCirujano ? S.all().filter(S.isSurgeon) : S.all();
     const filas = S.progreso(base);
-    const cumplidas = filas.filter((f) => f.cumplida).length;
 
     $('#goalMode').checked = soloCirujano;
 
-    $('#goalsSummary').innerHTML = filas.length
-      ? `<b>${cumplidas}</b> de ${filas.length} meta(s) cumplidas · ` +
-        `${base.length} caso(s) computados ${soloCirujano ? 'como cirujano' : 'en cualquier rol'}`
-      : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
+    const preferred = BF.util.store.get('featuredGoals', null);
+    const featured = Array.isArray(preferred) ? preferred.filter((proc) => filas.some((goal) => goal.proc === proc)).slice(0, 3) : filas.slice(0, 3).map((goal) => goal.proc);
+    let picker = $('#featuredGoalsPicker');
+    if (!picker) {
+      picker = document.createElement('div');
+      picker.id = 'featuredGoalsPicker';
+      picker.className = 'featured-goals-picker';
+      $('#goalsEditor').prepend(picker);
+      picker.addEventListener('change', () => {
+        const selected = Array.from(picker.querySelectorAll('select')).map((select) => select.value).filter(Boolean);
+        BF.util.store.set('featuredGoals', [...new Set(selected)]);
+        renderProgreso();
+      });
+    }
+    picker.innerHTML = '<p class="muted small">Elige hasta tres metas para destacar en este dispositivo.</p>' + [0, 1, 2].map((index) => `<label class="field"><span>Meta destacada ${index + 1}</span><select><option value="">Sin selección</option>${filas.map((goal) => `<option value="${esc(goal.proc)}"${featured[index] === goal.proc ? ' selected' : ''}>${esc(goal.proc)}</option>`).join('')}</select></label>`).join('');
 
-    $('#progressList').innerHTML = filas.map((f) => `
+    if (!editingGoals) {
+      $('#progressList').classList.add('goal-circles');
+    } else {
+      $('#progressList').classList.remove('goal-circles');
+    }
+
+
+    $('#progressList').innerHTML = (editingGoals ? filas : featured.map((proc) => filas.find((goal) => goal.proc === proc))).map((f) => editingGoals ? `
       <div class="goal${f.cumplida ? ' cumplida' : ''}">
         <span class="goal-name" title="${esc(f.members.join(' · '))}">${esc(f.proc)}${f.members.length > 1 ? `<small class="goal-group-label">${f.members.length} procedimientos combinados</small>` : ''}</span>
         <span class="goal-bar"><i style="--pct:${(Math.min(100, f.pct) / 100).toFixed(3)}"></i></span>
@@ -167,7 +204,7 @@ window.BF = window.BF || {};
         </span>
         ${editingGoals ? `<button class="icon-btn goal-remove" type="button" data-proc="${esc(f.proc)}"
           title="Quitar meta" aria-label="Quitar meta de ${esc(f.proc)}">×</button>` : ''}
-      </div>`).join('') ||
+      </div>` : `<div class="featured-goal"><div class="goal-ring" role="progressbar" aria-label="${esc(f.proc)}" aria-valuemin="0" aria-valuemax="${f.meta}" aria-valuenow="${Math.min(f.meta, f.logrado)}" aria-valuetext="${f.logrado} de ${f.meta} casos"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="42"/><circle class="ring-value" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="${Math.min(100, f.pct)} 100"/></svg><strong>${Math.min(100, f.pct)}%</strong></div><h3>${esc(f.proc)}</h3><p class="muted"><b>${f.logrado}</b> de ${f.meta} casos</p>${f.members.length > 1 ? '<small class="muted">Procedimientos combinados</small>' : ''}</div>`).join('') ||
       '<p class="empty">Todavía no hay metas. Elige un procedimiento y su objetivo abajo.</p>';
 
     // Selector: sólo procedimientos que aún no tienen meta.
@@ -203,15 +240,13 @@ window.BF = window.BF || {};
   /* ───────── Render general ───────── */
 
   function render() {
+    renderFrequent();
     const f = getFilters();
     const casos = S.filter(f);
     const m = S.metrics(casos);
     const vacio = S.all().length === 0;
 
     $('#btnClearFilters').hidden = !hasFilters(f) || vacio;
-    $('#dashSubtitle').textContent = hasFilters(f)
-      ? `${casos.length} caso(s) según los filtros aplicados.`
-      : `${S.all().length} caso(s) en total.`;
 
     /* Con la bitácora vacía, ocho KPI en cero y cinco gráficos "sin datos" no
        comunican nada: se muestran una guía de arranque y la tarjeta de metas
@@ -237,6 +272,15 @@ window.BF = window.BF || {};
   function init() {
     fillFilterSelects();
     $('#filterForm').addEventListener('input', render);
+    $('#frequentPeriod').addEventListener('change', renderFrequent);
+    $('#frequentCards').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-frequent-procedure]');
+      if (!button) return;
+      const procedure = button.dataset.frequentProcedure;
+      BF.bitacora.setFrequentScope({ ...frequentRange, procedure }, `${procedure} · ${$('#frequentPeriod').selectedOptions[0].textContent}`);
+      BF.app.show('bitacora');
+    });
+    $('#clearFrequentScope').addEventListener('click', () => BF.bitacora.setFrequentScope(null));
     $('#filterForm').addEventListener('change', render);
     const clearFilters = () => { $('#filterForm').reset(); render(); };
     $('#btnClearFilters').addEventListener('click', clearFilters);

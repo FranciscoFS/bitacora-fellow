@@ -839,6 +839,33 @@ input[type=checkbox] { min-height: 0; }
 .associated-picker .picker-results { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
 .associated-picker .chips { min-height: 42px; margin: 0; }
 .selection-placeholder { font-size: .8rem; color: var(--muted); padding: 10px 0; }
+.frequent-section { margin: 32px 0; }
+.frequent-section h3 { margin: 0; font-size: 1.1rem; }
+.frequent-section select { width: auto; max-width: 100%; }
+.frequent-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.frequent-card { display: flex; flex-direction: column; gap: 16px; text-align: left; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 24px; cursor: pointer; font: inherit; transition: transform 200ms, box-shadow 200ms; }
+.frequent-card:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.frequent-name { font-weight: 600; flex: 1; }
+.frequent-card strong { font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+.frequent-card small { font-size: .85rem; font-weight: 400; }
+.advanced-charts > summary { cursor: pointer; padding: 18px 0; border-top: 1px solid var(--border); color: var(--muted); }
+@media (max-width: 600px) { .frequent-cards { grid-template-columns: 1fr; } }
+.goal-circles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 28px 0; }
+.featured-goal { text-align: center; min-width: 0; }
+.featured-goal h3 { font-size: 1rem; line-height: 1.4; margin: 16px 0 8px; }
+.featured-goal p { margin: 0; }
+.goal-ring { position: relative; width: clamp(160px, 18vw, 220px); max-width: 100%; aspect-ratio: 1; margin: auto; }
+.goal-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.goal-ring circle { fill: none; stroke-width: 5; }
+.ring-track { stroke: var(--border); }
+.ring-value { stroke: var(--accent); stroke-linecap: round; }
+.goal-ring strong { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(2rem, 3vw, 2.8rem); font-variant-numeric: tabular-nums; }
+.featured-goals-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 20px 0; border-top: 1px solid var(--border); }
+.featured-goals-picker > p { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 600px) {
+  .goal-circles { grid-template-columns: 1fr; }
+  .featured-goals-picker { grid-template-columns: 1fr; }
+}
 .optional-label { color: var(--muted); font-size: .75rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; }
 .clinical-picker .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); border-radius: 8px; min-height: 40px; }
 .procedure-picker { grid-template-columns: none; }

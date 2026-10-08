@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
 <meta name="description" content="Bitácora personal de cirugía de rodilla: registro de casos y progreso del fellowship.">
@@ -18,7 +18,7 @@
 <main id="contenido" tabindex="-1">
 <aside class="storage-warning" id="storageWarning" role="alert" hidden><strong>No se pudo guardar en este dispositivo.</strong> Conserva esta pestaña abierta y exporta un respaldo antes de salir. <button class="btn btn-sm" id="btnEmergencyBackup" type="button">Exportar respaldo</button></aside>
 <section class="view" id="view-dashboard" hidden>
-<div class="view-head"><div><h2>Tu experiencia quirúrgica</h2><p class="muted" id="dashSubtitle"></p></div><button class="btn btn-primary" type="button" data-new-case>Registrar caso</button></div>
+<div class="view-head"><button class="btn btn-primary" type="button" data-new-case>Registrar caso</button></div>
 <div id="gettingStarted" hidden></div>
 <div id="dashboardData">
 <div class="section-heading"><h3>Resumen del período</h3><button class="btn btn-ghost btn-sm" id="btnClearFilters" type="button" hidden>Limpiar filtros</button></div>
@@ -29,21 +29,22 @@
 </div>
 <figure class="card chart progress-card" id="cardProgreso">
 <div class="section-heading"><figcaption>Progreso del fellowship</figcaption><button class="btn btn-sm" type="button" id="btnEditGoals" aria-expanded="false" aria-controls="goalsEditor">Editar metas</button></div>
-<p class="muted small">Acumulado de todos tus casos. Las metas no cambian con los filtros.</p>
-<div class="goals-head"><p class="goals-summary" id="goalsSummary"></p><label class="switch switch-line"><input type="checkbox" id="goalMode"><i aria-hidden="true"></i><em>Contar sólo como cirujano</em></label></div>
+<div class="goals-head"><label class="switch switch-line"><input type="checkbox" id="goalMode"><i aria-hidden="true"></i><em>Contar sólo como cirujano</em></label></div>
 <div class="goals" id="progressList"></div><div id="goalsEditor" hidden><div class="goals-add"><select id="goalProc" aria-label="Procedimiento de la nueva meta"></select><input type="number" id="goalMeta" min="1" max="999" placeholder="Meta" aria-label="Cantidad objetivo"><button class="btn btn-sm" id="btnAddGoal" type="button">Agregar meta</button></div><div class="goal-group-editor"><h3>Combinar procedimientos en una meta</h3><label class="field"><span>Meta que quieres agrupar</span><select id="goalGroupTarget"></select></label><label class="field"><span>Buscar procedimientos para incluir</span><input type="search" id="goalGroupSearch" placeholder="PTR, LCA, menisco…"></label><div class="chips goal-group-options" id="goalGroupOptions" aria-label="Procedimientos incluidos en la meta"></div><div class="actions-row"><button class="btn btn-sm" type="button" id="btnSaveGoalGroup">Guardar combinación</button><button class="btn btn-sm" type="button" id="btnGroupPtr">Agrupar PTR convencional y robótica</button></div><p class="muted small">Cada caso cuenta una sola vez en la meta, aunque incluya varios de los procedimientos seleccionados. Los grupos se sincronizan con tu bitácora.</p></div></div>
 </figure>
-<div class="charts" id="chartsGrid">
+<section class="frequent-section" aria-labelledby="frequentTitle"><div class="section-heading"><h3 id="frequentTitle">Cirugías más frecuentes</h3><select id="frequentPeriod" aria-label="Período de las cirugías más frecuentes"><option value="all">Todo el historial</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="year">Este año</option></select></div><p class="muted small" id="frequentContext"></p><div id="frequentCards" class="frequent-cards"></div></section>
+<details class="advanced-charts"><summary>Ver análisis detallado</summary><div class="charts" id="chartsGrid">
 <figure class="card chart"><figcaption>Casos por mes <span class="muted small" id="capPorMes"></span></figcaption><div class="chart-body" id="chartPorMes"></div></figure>
 <figure class="card chart"><figcaption>Casos como cirujano · acumulado</figcaption><div class="chart-body" id="chartCirujano"></div></figure>
 <figure class="card chart"><figcaption>Procedimientos más frecuentes</figcaption><p class="muted small">Incluye procedimientos principales y asociados.</p><div class="chart-body" id="chartProc"></div></figure>
 <figure class="card chart"><figcaption>Participación por rol</figcaption><div class="chart-body" id="chartRol"></div></figure>
 <figure class="card chart"><figcaption>Lateralidad</figcaption><div class="chart-body" id="chartLateralidad"></div></figure>
 <figure class="card chart"><figcaption>Abordajes utilizados</figcaption><div class="chart-body" id="chartAbordaje"></div></figure>
-</div>
+</div></details>
 </section>
 <section class="view" id="view-bitacora" hidden>
 <div class="view-head"><div><h2>Bitácora</h2><p class="muted" id="tableCount"></p></div><button class="btn btn-primary" type="button" id="btnNewFromList">Registrar caso</button></div>
+<div id="frequentScope" class="actions-row" hidden><span id="frequentScopeLabel"></span><button id="clearFrequentScope" class="btn btn-sm" type="button">Ver todos los casos</button></div>
 <div class="list-toolbar"><label class="field"><span>Buscar casos</span><input type="search" id="tableSearch" placeholder="Código, diagnóstico, procedimiento…"></label><label class="field"><span>Ordenar por</span><select id="tableSort"><option value="fecha-desc">Más recientes</option><option value="fecha-asc">Más antiguos</option><option value="duracion-desc">Mayor duración</option><option value="proc-asc">Procedimiento A–Z</option></select></label><button class="btn" id="btnExportList" type="button">Exportar resultados</button></div>
 <div class="card table-wrap" id="tableWrap"><table class="data" id="caseTable"><thead><tr><th scope="col">Código</th><th scope="col">Fecha</th><th scope="col">Rol</th><th scope="col">Procedimiento</th><th scope="col">Lado</th><th scope="col">Abordaje</th><th scope="col" class="num">Min</th><th scope="col">Complicación</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody></tbody></table></div>
 <div class="case-list" id="mobileCases"></div><div class="empty card" id="tableEmpty" hidden><p id="tableEmptyText"></p><button class="btn" type="button" id="btnClearSearch">Limpiar búsqueda</button></div>
