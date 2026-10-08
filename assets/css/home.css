@@ -43,7 +43,7 @@
 .home-focus-progress > span { margin-left: auto; font-size: 1.2rem; }
 .home-focus-note { color: var(--muted); font-size: .8125rem; line-height: 1.45; overflow-wrap: anywhere; }
 #view-dashboard .goal { transition: background 240ms; }
-#view-dashboard .goal.is-focused { background: var(--accent-soft); border-radius: 8px; outline: 2px solid var(--accent); outline-offset: 4px; }
+#view-dashboard .goal.is-focused, #view-dashboard .featured-goal.is-focused { background: var(--accent-soft); border-radius: 8px; outline: 2px solid var(--accent); outline-offset: 4px; }
 
 #view-dashboard .daybook-activity > .chart { padding: 22px 24px; border-radius: 18px; background: var(--surface); }
 #view-dashboard .getting-started { max-width: none; border-radius: 20px; padding: 28px; background: var(--surface); }
@@ -150,4 +150,48 @@
 #chartPorMes .chart-values { margin-top: 12px; }
 @media (max-width: 780px) {
   #view-dashboard .daybook-activity > .chart { padding: 20px 16px; }
+}
+
+/* Featured goals use the rings from main, sized for the dashboard column. */
+#progressList.goal-circles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 24px 0 8px; }
+#progressList .featured-goal { min-width: 0; text-align: center; }
+#progressList .goal-ring { container-type: inline-size; position: relative; width: min(100%, 176px); aspect-ratio: 1; margin-inline: auto; }
+#progressList .goal-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+#progressList .goal-ring circle { fill: none; stroke-width: 5; }
+#progressList .ring-track { stroke: var(--chart-track); }
+#progressList .ring-value { stroke: var(--accent); stroke-linecap: round; }
+#progressList .goal-ring[data-progress="0"] .ring-value { opacity: 0; }
+#progressList .cumplida .ring-value { stroke: var(--ok); }
+#progressList .goal-ring strong { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(1.5rem, 17cqi, 2.3rem); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.045em; line-height: 1; }
+#progressList .featured-goal h3 { margin: 14px 0 6px; font-size: .9375rem; font-weight: 550; line-height: 1.4; text-wrap: pretty; overflow-wrap: anywhere; }
+#progressList .featured-goal p { margin: 0; color: var(--muted); font-size: .875rem; line-height: 1.45; }
+#progressList .featured-goal p b { color: var(--text); font-weight: 550; }
+#progressList .featured-goal small { display: block; margin-top: 4px; font-size: .8125rem; line-height: 1.4; }
+#progressList.goal-circles > .empty { grid-column: 1 / -1; }
+.featured-goals-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 20px 0; border-top: 1px solid var(--border); }
+.featured-goals-picker > p { grid-column: 1 / -1; margin: 0; }
+.featured-goals-picker select { min-width: 0; width: 100%; }
+@container (max-width: 460px) {
+  #progressList.goal-circles { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 20px; }
+  #progressList .featured-goal { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; text-align: left; }
+  #progressList .goal-ring { width: 96px; }
+  #progressList .featured-goal h3 { margin: 0 0 6px; }
+  .featured-goals-picker { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 300px) {
+  #progressList .featured-goal { grid-template-columns: 84px minmax(0, 1fr); gap: 12px; }
+  #progressList .goal-ring { width: 84px; }
+  #progressList .featured-goal h3 { font-size: .875rem; }
+}
+
+
+/* Keep mobile metadata readable without inflating the main counters. */
+@media (max-width: 780px) {
+  #view-dashboard .home-stat-label, #view-dashboard .home-stat-link,
+  #view-dashboard .home-recent-date, #view-dashboard .home-focus-note,
+  #view-dashboard .home-focus-progress, #view-dashboard .home-period-control > span,
+  #view-dashboard .home-period-buttons button, #view-dashboard .practice-context,
+  #view-dashboard .practice-card-count small, #view-dashboard .practice-tile .practice-card-share,
+  #view-dashboard .practice-tile .practice-card-top, #view-dashboard .featured-goal small,
+  #view-dashboard #practiceAll, #chartPorMes .chart-values summary { font-size: .875rem; }
 }

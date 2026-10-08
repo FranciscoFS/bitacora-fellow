@@ -198,3 +198,86 @@ body{font-size:15px}.topbar{background:var(--bg);border-bottom:0;box-shadow:none
 .layout-choice { width: 32px; min-height: 32px; padding: 6px; justify-content: center; border-radius: 6px; }
 .layout-choice svg { width: 18px; height: 18px; }
 @media (pointer: coarse) { .layout-choice { width: 44px; min-height: 44px; } }
+
+
+/* Categoría global y etiquetas de los casos: misma paleta en lista y ficha. */
+#caseTable .wrap-cell { white-space: normal; min-width: 240px; }
+.case-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; margin-top: 8px; }
+.case-tag {
+  --tag-hue: #455768;
+  display: inline-block; max-width: 100%; padding: 4px 8px; border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 90%, var(--tag-hue)); color: var(--tag-hue);
+  font-size: .8125rem; font-weight: 500; line-height: 1.4; white-space: normal; overflow-wrap: anywhere;
+}
+.case-tag--meniscus { --tag-hue: #27614c; }
+.case-tag--ligaments { --tag-hue: #2e587d; }
+.case-tag--patellofemoral { --tag-hue: #665080; }
+.case-tag--arthroplasty { --tag-hue: #795b25; }
+.case-tag--osteotomy { --tag-hue: #52652c; }
+.case-tag--cartilage { --tag-hue: #28636b; }
+.case-tag--fracture { --tag-hue: #8a4b35; }
+.case-tag--other { --tag-hue: #545560; }
+.case-item > .case-tags { margin: 2px 0 14px; }
+.case-bottom > .pill { max-width: calc(100% - 48px); white-space: normal; }
+.dl dd > .case-tags { margin-top: 0; }
+@media print { .case-tag { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+
+
+/* Visual trial: quieter secondary surfaces and a compact mobile save bar. */
+:root { --brand-yellow: #f8df7e; --on-yellow: #172f46; }
+:root[data-theme="light"] { --surface-2: #eef3f6; --accent-soft: #e4f0f7; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+#caseTable td:nth-child(3) .pill, .case-bottom > .pill {
+  background: var(--surface-2); color: var(--muted); border: 0; border-radius: 6px;
+  font-size: .8125rem; font-weight: 400; line-height: 1.4;
+}
+:root[data-theme="dark"] .case-tag {
+  background: color-mix(in srgb, var(--surface) 65%, var(--tag-hue));
+  color: color-mix(in srgb, #fff 60%, var(--tag-hue));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .case-tag {
+    background: color-mix(in srgb, var(--surface) 65%, var(--tag-hue));
+    color: color-mix(in srgb, #fff 60%, var(--tag-hue));
+  }
+}
+.form-more-actions { flex: 1; min-width: 0; }
+.form-more-actions > summary { display: none; }
+.form-actions-options { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+@media (max-width: 780px) {
+  .case-tag, .case-bottom > .pill, .case-meta, .field-error, .section-state,
+  .optional-label, #caseForm .catalog-option small, .picker-categories button { font-size: .875rem !important; }
+  .form-actions { bottom: 8px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); gap: 6px; }
+  .save-actions { display: flex; flex-wrap: nowrap; gap: 8px; }
+  .save-actions > #btnSaveCase { flex: 1; min-height: 44px; padding: 10px 14px; font-size: .875rem; }
+  .form-more-actions { flex: none; position: relative; }
+  .form-more-actions > summary {
+    display: flex; align-items: center; justify-content: center; min-height: 44px;
+    padding: 10px 12px; border-radius: 8px; color: var(--muted); font-size: .875rem; cursor: pointer;
+    list-style: none;
+  }
+  .form-more-actions > summary::-webkit-details-marker { display: none; }
+  .form-more-actions > summary::after { content: '⌃'; margin-left: 8px; font-size: 1rem; }
+  .form-more-actions[open] > summary { background: var(--surface-2); color: var(--text); }
+  .form-more-actions[open] > summary::after { content: '⌄'; }
+  .form-actions-options {
+    position: absolute; right: 0; bottom: calc(100% + 12px); display: grid; gap: 4px;
+    width: min(230px, calc(100vw - 64px)); padding: 6px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(15, 35, 55, .14);
+  }
+  .form-actions-options .btn, .form-actions-options .btn-ghost {
+    flex: none; width: 100%; margin: 0; min-height: 44px; padding: 10px 12px;
+    border: 0; border-radius: 6px; justify-content: flex-start; text-align: left; font-size: .875rem;
+  }
+  .form-actions-options .btn { background: transparent; }
+  .form-actions-options .btn:hover { background: var(--surface-2); }
+  .form-msg { font-size: .875rem; line-height: 1.4; }
+}
+
+@media (max-width: 780px) {
+  #caseForm .picker-categories {
+    display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain;
+    padding: 2px 2px 6px; scrollbar-width: thin;
+  }
+  #caseForm .picker-categories button { flex: 0 0 auto; white-space: nowrap; }
+}

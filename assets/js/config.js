@@ -107,6 +107,8 @@ BF.CONFIG = {
     // Sinovial, infección y otros
     'Sinovectomía (artroscópica/abierta)',
     'Toilette articular por infección',
+    'Aseo quirúrgico',
+    'Cambio de VAC',
     'Recambio de espaciador por IPR',
     'Artrofibrosis: liberación artroscópica',
     'Plicae sinovial / banda de Lannelongue',
@@ -119,6 +121,8 @@ BF.CONFIG = {
     'Infiltración / procedimiento menor',
     'Otro (especificar en notas)'
   ],
+
+  PROCEDIMIENTOS_SOLO_ADICIONALES: ['Cambio de VAC'],
 
   /* Campos del control evolutivo (se repiten en cada fila del repeater) */
   FOLLOWUP_FIELDS: [
@@ -140,6 +144,9 @@ BF.CONFIG = {
     'Fractura Platillos Tibiales': 10
   }
 };
+
+/* Catálogo principal; los adicionales siguen disponibles para asociar y contar. */
+BF.CONFIG.PROCEDIMIENTOS_PRINCIPALES = BF.CONFIG.PROCEDIMIENTOS.filter((p) => !BF.CONFIG.PROCEDIMIENTOS_SOLO_ADICIONALES.includes(p));
 
 /* Roles en los que el fellow actúa como cirujano */
 BF.CONFIG.ROLES_CIRUJANO = ['Cirujano (supervisado)', 'Cirujano (independiente)'];

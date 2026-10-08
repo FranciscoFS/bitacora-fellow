@@ -148,7 +148,30 @@ window.BF = window.BF || {};
       ? `<b>${cumplidas}</b> / ${filas.length} cumplidas`
       : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
 
-    $('#progressList').innerHTML = filas.map((f) => `
+    const preferred = BF.util.store.get('featuredGoals', null);
+    const featured = Array.isArray(preferred) ? [...new Set(preferred)].filter((proc) => filas.some((goal) => goal.proc === proc)).slice(0, 3) : filas.slice(0, 3).map((goal) => goal.proc);
+    let picker = $('#featuredGoalsPicker');
+    if (!picker) {
+      picker = document.createElement('div');
+      picker.id = 'featuredGoalsPicker';
+      picker.className = 'featured-goals-picker';
+      $('#goalsEditor').prepend(picker);
+      picker.addEventListener('change', () => {
+        const selected = Array.from(picker.querySelectorAll('select')).map((select) => select.value).filter(Boolean);
+        BF.util.store.set('featuredGoals', [...new Set(selected)]);
+        renderProgreso();
+      });
+    }
+    picker.innerHTML = '<p class="muted small">Elige hasta tres metas para destacar en este dispositivo.</p>' + [0, 1, 2].map((index) => `<label class="field"><span>Meta destacada ${index + 1}</span><select><option value="">Sin selección</option>${filas.map((goal) => `<option value="${esc(goal.proc)}"${featured[index] === goal.proc ? ' selected' : featured.includes(goal.proc) ? ' disabled' : ''}>${esc(goal.proc)}</option>`).join('')}</select></label>`).join('');
+
+    if (!editingGoals) {
+      $('#progressList').classList.add('goal-circles');
+    } else {
+      $('#progressList').classList.remove('goal-circles');
+    }
+
+
+    $('#progressList').innerHTML = (editingGoals ? filas : featured.map((proc) => filas.find((goal) => goal.proc === proc))).map((f) => editingGoals ? `
       <div class="goal${f.cumplida ? ' cumplida' : ''}" data-goal-proc="${esc(f.proc)}">
         <span class="goal-name" title="${esc(f.members.join(' · '))}">${esc(f.proc)}${f.members.length > 1 ? `<small class="goal-group-label">${f.members.length} procedimientos combinados</small>` : ''}</span>
         <span class="goal-bar"><i style="--pct:${(Math.min(100, f.pct) / 100).toFixed(3)}"></i></span>
@@ -160,8 +183,8 @@ window.BF = window.BF || {};
         </span>
         ${editingGoals ? `<button class="icon-btn goal-remove" type="button" data-proc="${esc(f.proc)}"
           title="Quitar meta" aria-label="Quitar meta de ${esc(f.proc)}">×</button>` : ''}
-      </div>`).join('') ||
-      '<p class="empty">Todavía no hay metas. Elige un procedimiento y su objetivo abajo.</p>';
+      </div>` : `<div class="featured-goal${f.cumplida ? ' cumplida' : ''}" data-goal-proc="${esc(f.proc)}"><div class="goal-ring" data-progress="${Math.min(100, f.pct)}" role="progressbar" aria-label="${esc(f.proc)}" aria-valuemin="0" aria-valuemax="${f.meta}" aria-valuenow="${Math.min(f.meta, f.logrado)}" aria-valuetext="${f.logrado} de ${f.meta} casos"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="42"/><circle class="ring-value" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="${Math.min(100, f.pct)} 100"/></svg><strong>${Math.min(100, f.pct)}%</strong></div><div class="featured-goal-copy"><h3>${esc(f.proc)}</h3><p class="muted"><b>${f.logrado}</b> de ${f.meta} casos</p>${f.members.length > 1 ? '<small class="muted">Procedimientos combinados</small>' : ''}</div></div>`).join('') ||
+      (filas.length ? '<p class="empty">Elige hasta tres metas en «Editar metas».</p>' : '<p class="empty">Todavía no hay metas. Agrega una en «Editar metas».</p>');
 
     // Selector: sólo procedimientos que aún no tienen meta.
     const libres = C.PROCEDIMIENTOS.filter((p) => !(p in S.getObjetivos()));

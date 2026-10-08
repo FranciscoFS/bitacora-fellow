@@ -2,7 +2,7 @@
 window.BF = window.BF || {};
 (function () {
   const { $, esc, fmtDate } = BF.util;
-  let summaryKey = '', focusKey = '', focusTimer;
+  let summaryKey = '', focusKey = '', focusTimer, hasEntered = false;
   const allowsMotion = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function reveal(nodes, delay = 0) {
     if (!allowsMotion()) return;
@@ -44,7 +44,7 @@ window.BF = window.BF || {};
       stat(metrics.comoCirujano, 'Como cirujano', 'surgeon') +
       stat(hours, 'Horas de quirófano', 'hours', 1) +
       (recent ? `<button type="button" class="home-recent" data-home-case="${esc(recent.id)}"><span class="home-stat-label">Último caso</span><strong>${esc(recent.procedimientoPrincipal || 'Caso registrado')}</strong><span class="home-recent-date">${esc(fmtDate(recent.fecha))} · ${esc(recent.codigo)}</span><span class="home-stat-link">Abrir ficha <span aria-hidden="true">↗</span></span></button>` : '');
-    if (!$('#view-dashboard').hidden) { reveal($('#personalSummary').children); animateNumbers(); }
+    if (hasEntered && !$('#view-dashboard').hidden) { reveal($('#personalSummary').children); animateNumbers(); }
   }
   function renderFocus(goals, soloCirujano) {
     const host = $('#homeGoalFocus');
@@ -64,14 +64,22 @@ window.BF = window.BF || {};
     document.querySelectorAll('[data-home-period]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.homePeriod === value)));
   }
   function animateTiles(host) {
-    if (!$('#view-dashboard').hidden) reveal(host.querySelectorAll('.practice-tile'));
+    if (hasEntered && !$('#view-dashboard').hidden) reveal(host.querySelectorAll('.practice-tile'));
   }
   function enter() {
     syncPeriods();
+    if (hasEntered) return;
+    hasEntered = true;
     reveal(document.querySelectorAll('#view-dashboard > .view-head, #personalSummary, #gettingStarted:not([hidden]), #daybookOverview > *, #view-dashboard > .advanced-analysis:not([hidden])'));
     animateNumbers();
     animateTiles($('#practiceTiles'));
     if (!allowsMotion()) return;
+    document.querySelectorAll('#progressList .ring-value').forEach((ring, i) => {
+      if (typeof ring.animate === 'function') ring.animate(
+        [{ strokeDasharray: '0 100' }, { strokeDasharray: ring.getAttribute('stroke-dasharray') }],
+        { duration: 650, delay: 100 + i * 70, easing: 'cubic-bezier(.22,.8,.3,1)' }
+      );
+    });
     document.querySelectorAll('#progressList .goal-bar i').forEach((bar, i) => {
       if (typeof bar.animate === 'function') bar.animate(
         [{ transform: 'scaleX(0)' }, { transform: `scaleX(${bar.style.getPropertyValue('--pct') || 0})` }],
@@ -100,7 +108,12 @@ window.BF = window.BF || {};
     });
     $('#homeGoalFocus').addEventListener('click', (e) => {
       const button = e.target.closest('[data-focus-goal]'); if (!button) return;
-      const row = Array.from(document.querySelectorAll('#progressList .goal')).find((node) => node.dataset.goalProc === button.dataset.focusGoal);
+      const findGoal = () => Array.from(document.querySelectorAll('#progressList [data-goal-proc]')).find((node) => node.dataset.goalProc === button.dataset.focusGoal);
+      let row = findGoal();
+      if (!row && button.dataset.focusGoal && $('#btnEditGoals').getAttribute('aria-expanded') !== 'true') {
+        $('#btnEditGoals').click();
+        row = findGoal();
+      }
       const target = row || $('#cardProgreso');
       target.scrollIntoView({ block: 'center', behavior: allowsMotion() ? 'smooth' : 'instant' });
       document.querySelectorAll('#progressList .is-focused').forEach((node) => node.classList.remove('is-focused'));

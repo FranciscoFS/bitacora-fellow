@@ -66,6 +66,28 @@ window.BF = window.BF || {};
     return l;
   }
 
+  const categoryTones = {
+    menisco: 'meniscus', ligamentos: 'ligaments', patelofemoral: 'patellofemoral',
+    artroplastia: 'arthroplasty', osteotomias: 'osteotomy', cartilago: 'cartilage',
+    fracturas: 'fracture', otros: 'other'
+  };
+  const tagKey = (tag) => String(tag).trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+  function caseTags(c) {
+    const category = c.procedimientoPrincipal ? C.procedureArea(c.procedimientoPrincipal) : '';
+    const seen = new Set();
+    const tags = [category, ...(c.tags || [])].filter((tag) => {
+      const key = tagKey(tag);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!tags.length) return '';
+    return `<div class="case-tags" role="group" aria-label="Etiquetas del caso">${tags.map((tag) => {
+      const tone = categoryTones[tagKey(tag)];
+      return `<span class="case-tag${tone ? ' case-tag--' + tone : ''}">${esc(tag)}</span>`;
+    }).join('')}</div>`;
+  }
+
   function render() {
     $('#listScope').hidden=!scope;
     const q = $('#tableSearch').value.trim().toLowerCase();
@@ -78,7 +100,7 @@ window.BF = window.BF || {};
       const lat = (c.lateralidad || '').charAt(0) || '—';
       return `<tr data-id="${c.id}">
         <td class="wrap-cell"><button class="procedure-link code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.procedimientoPrincipal || 'Sin procedimiento')}</button>
-          ${c.procedimientosAsociados.length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}</td>
+          ${(c.procedimientosAsociados || []).length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}${caseTags(c)}</td>
         <td>${esc(fmtDate(c.fecha))}</td>
         <td><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || '—')}</span></td>
         <td class="case-code">${esc(c.codigo)}</td>
@@ -89,7 +111,7 @@ window.BF = window.BF || {};
         <td class="col-actions"><button class="icon-btn" data-act="edit" title="Editar" aria-label="Editar">✎</button></td>
       </tr>`;
     }).join('');
-    $('#mobileCases').innerHTML = rows.map((c) => `<article class="case-item" data-id="${esc(c.id)}"><button type="button" class="case-open" aria-label="Ver el detalle del caso ${esc(c.codigo)}"><strong>${esc(c.procedimientoPrincipal || 'Procedimiento sin registrar')}</strong><span class="case-meta">${esc(fmtDate(c.fecha))} · ${esc(c.lateralidad || 'Sin lateralidad')} · ${esc(c.codigo)}</span></button><div class="case-bottom"><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || 'Sin rol')}</span><button class="icon-btn" type="button" data-act="edit" aria-label="Editar ${esc(c.codigo)}">✎</button></div>${S.hasComplication(c) ? '<p class="small case-warning">Complicación registrada</p>' : ''}</article>`).join('');
+    $('#mobileCases').innerHTML = rows.map((c) => `<article class="case-item" data-id="${esc(c.id)}"><button type="button" class="case-open" aria-label="Ver el detalle del caso ${esc(c.codigo)}"><strong>${esc(c.procedimientoPrincipal || 'Procedimiento sin registrar')}</strong><span class="case-meta">${esc(fmtDate(c.fecha))} · ${esc(c.lateralidad || 'Sin lateralidad')} · ${esc(c.codigo)}</span></button>${caseTags(c)}<div class="case-bottom"><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || 'Sin rol')}</span><button class="icon-btn" type="button" data-act="edit" aria-label="Editar ${esc(c.codigo)}">✎</button></div>${S.hasComplication(c) ? '<p class="small case-warning">Complicación registrada</p>' : ''}</article>`).join('');
 
     const total = S.all().length;
     $('#tableCount').textContent = total === 0
@@ -157,7 +179,7 @@ window.BF = window.BF || {};
       ${row('Complicación intraoperatoria', c.complicacionIntraop ? `Sí — ${c.complicacionIntraopDetalle || 'sin detalle'}` : 'No')}
 
       ${section('Notas')}
-      ${row('Etiquetas', (c.tags || []).join(', '))}
+      ${caseTags(c) ? `<dt>Etiquetas</dt><dd>${caseTags(c)}</dd>` : ''}
       ${row('Notas', c.notas)}
       ${row('Creado', fmtDateTime(c.creado))}
       ${row('Última modificación', fmtDateTime(c.actualizado))}

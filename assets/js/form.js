@@ -70,9 +70,9 @@ window.BF = window.BF || {};
     const counts = new Map();
     S.all().forEach((c) => {
       const p = C.procedureName(c.procedimientoPrincipal);
-      if (C.PROCEDIMIENTOS.includes(p)) counts.set(p, (counts.get(p) || 0) + 1);
+      if (C.PROCEDIMIENTOS_PRINCIPALES.includes(p)) counts.set(p, (counts.get(p) || 0) + 1);
     });
-    return [...new Set([...Array.from(counts).sort((a, b) => b[1] - a[1]).map(([p]) => p), ...Object.keys(C.DEFAULT_OBJETIVOS), ...C.PROCEDIMIENTOS])].slice(0, 6);
+    return [...new Set([...Array.from(counts).sort((a, b) => b[1] - a[1]).map(([p]) => p), ...Object.keys(C.DEFAULT_OBJETIVOS), ...C.PROCEDIMIENTOS_PRINCIPALES])].slice(0, 6);
   }
 
   function fillSelect(select, values, placeholder) {
@@ -84,9 +84,9 @@ window.BF = window.BF || {};
   function renderPrincipal() {
     const query = normalizedQuery($('#principalSearch').value.trim());
     const current = form.elements.procedimientoPrincipal.value;
-    const matches = !query && principalArea === 'Todas' ? frequentProcedures() : C.PROCEDIMIENTOS.filter((p) => normalizedQuery(p).includes(query) && (principalArea === 'Todas' || areaOf(p) === principalArea));
+    const matches = !query && principalArea === 'Todas' ? frequentProcedures() : C.PROCEDIMIENTOS_PRINCIPALES.filter((p) => normalizedQuery(p).includes(query) && (principalArea === 'Todas' || areaOf(p) === principalArea));
     // Keep the complete catalog in the form control, independently of visible results.
-    const options = current && !C.PROCEDIMIENTOS.includes(current) ? [current, ...C.PROCEDIMIENTOS] : C.PROCEDIMIENTOS;
+    const options = current && !C.PROCEDIMIENTOS_PRINCIPALES.includes(current) ? [current, ...C.PROCEDIMIENTOS_PRINCIPALES] : C.PROCEDIMIENTOS_PRINCIPALES;
     fillSelect(form.elements.procedimientoPrincipal, options, 'Elegir procedimiento');
     $('#principalSelected').hidden = !current;
     $('#principalSelected').innerHTML = current ? `<span class="selection-check" aria-hidden="true">✓</span><strong>${esc(current)}</strong><button class="btn btn-ghost" type="button" id="changePrincipal" aria-expanded="${principalExpanded}" aria-controls="principalCatalog">Cambiar</button>` : '';
@@ -263,7 +263,7 @@ window.BF = window.BF || {};
     excludedAutoTags.clear();
     personalSteps.clear();
     principalArea = associatedArea = 'Todas'; principalExpanded = true;
-    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo();
     form.elements.fecha.value = keepDate ? fecha : todayISO();
     if (keepSurgeon) form.elements.cirujano.value = surgeon;
@@ -288,7 +288,7 @@ window.BF = window.BF || {};
   async function edit(id) {
     if (!await allowDiscard()) { BF.app.show('nuevo'); return false; }
     const c = S.get(id); if (!c) return false;
-    clearInvalid(); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    clearInvalid(); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     write(c); editingId = id; setMeta(); baseline = fingerprint(); dirty = false;
     $('#draftStatus').textContent = 'Editando caso';
     $('#formMsg').textContent = ''; BF.app.show('nuevo');
@@ -334,7 +334,7 @@ window.BF = window.BF || {};
   function init() {
     form = $('#caseForm');
     initChoices();
-    fillSelect(form.elements.anestesia, C.ANESTESIAS, ''); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    fillSelect(form.elements.anestesia, C.ANESTESIAS, ''); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     const draft = store.get('draft'); resetForm(); refreshDatalist();
     if (draft && draft.caso) {
       write(draft.caso); editingId = S.get(draft.editingId) ? draft.editingId : null;
@@ -388,13 +388,31 @@ window.BF = window.BF || {};
     };
     $('#procChips').addEventListener('click', toggleProc); $('#procOptions').addEventListener('click', toggleProc);
     $('#btnSaveAndNew').addEventListener('click', () => save({ andNew: true }));
+    const actionMenu = $('#formMoreActions');
+    const mobileActions = window.matchMedia('(max-width: 780px)');
+    const syncActionMenu = () => { actionMenu.open = !mobileActions.matches; };
+    syncActionMenu();
+    mobileActions.addEventListener('change', syncActionMenu);
+    actionMenu.addEventListener('click', (e) => {
+      if (mobileActions.matches && e.target.closest('button')) actionMenu.open = false;
+    });
+    document.addEventListener('click', (e) => {
+      if (mobileActions.matches && !actionMenu.contains(e.target)) actionMenu.open = false;
+    });
+    actionMenu.addEventListener('keydown', (e) => {
+      if (mobileActions.matches && e.key === 'Escape') {
+        actionMenu.open = false;
+        actionMenu.querySelector('summary').focus();
+      }
+    });
+
     $('#btnResetForm').addEventListener('click', startNew);
     $('#btnCancelEdit').addEventListener('click', async () => { if (await allowDiscard()) { resetForm(); BF.app.show('bitacora'); } });
     S.on('change', () => { if (!editingId) form.elements.codigo.value = S.nextCodigo(); refreshDatalist(); });
   }
   async function restoreDraft(draft) {
     if (!draft || !draft.caso || !await allowDiscard()) return false;
-    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     write(draft.caso); editingId = S.get(draft.editingId) ? draft.editingId : null;
     if (!editingId) { form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo(); }
     baseline = draft.baseline || ''; dirty = true; setMeta(); persistDraft();
