@@ -839,33 +839,6 @@ input[type=checkbox] { min-height: 0; }
 .associated-picker .picker-results { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
 .associated-picker .chips { min-height: 42px; margin: 0; }
 .selection-placeholder { font-size: .8rem; color: var(--muted); padding: 10px 0; }
-.frequent-section { margin: 32px 0; }
-.frequent-section h3 { margin: 0; font-size: 1.1rem; }
-.frequent-section select { width: auto; max-width: 100%; }
-.frequent-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.frequent-card { display: flex; flex-direction: column; gap: 16px; text-align: left; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 24px; cursor: pointer; font: inherit; transition: transform 200ms, box-shadow 200ms; }
-.frequent-card:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-.frequent-name { font-weight: 600; flex: 1; }
-.frequent-card strong { font-size: 1.8rem; font-variant-numeric: tabular-nums; }
-.frequent-card small { font-size: .85rem; font-weight: 400; }
-.advanced-charts > summary { cursor: pointer; padding: 18px 0; border-top: 1px solid var(--border); color: var(--muted); }
-@media (max-width: 600px) { .frequent-cards { grid-template-columns: 1fr; } }
-.goal-circles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 28px 0; }
-.featured-goal { text-align: center; min-width: 0; }
-.featured-goal h3 { font-size: 1rem; line-height: 1.4; margin: 16px 0 8px; }
-.featured-goal p { margin: 0; }
-.goal-ring { position: relative; width: clamp(160px, 18vw, 220px); max-width: 100%; aspect-ratio: 1; margin: auto; }
-.goal-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.goal-ring circle { fill: none; stroke-width: 5; }
-.ring-track { stroke: var(--border); }
-.ring-value { stroke: var(--accent); stroke-linecap: round; }
-.goal-ring strong { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(2rem, 3vw, 2.8rem); font-variant-numeric: tabular-nums; }
-.featured-goals-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 20px 0; border-top: 1px solid var(--border); }
-.featured-goals-picker > p { grid-column: 1 / -1; margin: 0; }
-@media (max-width: 600px) {
-  .goal-circles { grid-template-columns: 1fr; }
-  .featured-goals-picker { grid-template-columns: 1fr; }
-}
 .optional-label { color: var(--muted); font-size: .75rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; }
 .clinical-picker .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); border-radius: 8px; min-height: 40px; }
 .procedure-picker { grid-template-columns: none; }
@@ -881,3 +854,54 @@ input[type=checkbox] { min-height: 0; }
   .picker-categories button { min-height: 44px; padding: 8px 2px; font-size: .7rem; }
   .view-head h2 { font-size: 2.25rem; }
 }
+
+/* Direct case entry: short choices stay visible. */
+#view-nuevo .view-head { margin-bottom: 24px; }
+#view-nuevo .draft-status:empty { display: none; }
+#view-nuevo .draft-status { margin: -12px 0 16px; font-size: .8rem; }
+#caseForm .essential-fields > legend.sr-only { float: none; width: 1px; margin: 0; }
+#caseForm .essential-grid { grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr); gap: 24px; }
+#caseForm .quick-rol, #caseForm .quick-abordaje { grid-column: 1 / -1; }
+.quick-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.quick-options button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: .875rem; line-height: 1.4; cursor: pointer; transition: background var(--dur), border-color var(--dur); }
+.quick-options button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.quick-options button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.quick-options button:focus-visible, #caseForm .catalog-option:focus-visible, #caseForm .diagnosis-options button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.quick-options[aria-invalid] { border-left: 3px solid var(--danger); padding-left: 8px; }
+#caseForm .quick-lateralidad .quick-options button { flex: 1; }
+#caseForm .clinical-workspace { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+#caseForm .clinical-picker { padding: 0; border: 0; border-radius: 0; background: transparent; gap: 12px; }
+#caseForm .procedure-picker > h3 { font-size: .875rem; font-weight: 600; letter-spacing: 0; margin: 0; }
+#caseForm .procedure-catalog { display: grid; gap: 12px; }
+#caseForm .picker-results { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 320px; }
+#caseForm .catalog-option { min-height: 56px; padding: 10px 12px; }
+#caseForm .selected-procedure { min-height: 48px; padding: 8px 12px; }
+#caseForm .selected-procedure strong { flex: 1; }
+#caseForm .selected-procedure .btn { flex: none; font-size: .8rem; padding: 6px 10px; }
+#caseForm .diagnosis-options { margin-top: -4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+#caseForm .diagnosis-options button { min-height: 44px; padding: 10px 14px; background: var(--surface); }
+#caseForm .diagnosis-options button:last-child { border-bottom: 0; }
+#caseForm .diagnosis-options button:hover { background: var(--accent-soft); }
+#caseForm .associated-picker { border-top: 1px solid var(--border); padding-top: 12px; }
+#caseForm .associated-picker summary { padding: 8px 0; }
+#caseForm .associated-content { display: grid; gap: 12px; padding-top: 12px; }
+#caseForm .personal-details { padding: 0; background: transparent; border: 0; }
+#caseForm .personal-details summary { padding: 8px 0; }
+#caseForm .personal-details .chips { margin-top: 12px; }
+#caseForm .optional-heading h3 { display: flex; align-items: center; gap: 12px; font-size: 1rem; }
+@media (max-width: 700px) {
+  #caseForm .essential-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  #caseForm .essential-grid > .field:nth-last-child(-n+2) { grid-column: auto; }
+  #caseForm .picker-results { grid-template-columns: minmax(0, 1fr); }
+  #caseForm .quick-rol .quick-options, #caseForm .quick-abordaje .quick-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #caseForm .quick-options button { padding: 10px 8px; font-size: .8rem; }
+  #caseForm .selected-procedure { flex-wrap: wrap; }
+}
+
+#caseForm .associated-picker > summary .optional-label, #caseForm .personal-details > summary .optional-label { display: inline; float: none; margin-left: 8px; border: 0; padding: 0; white-space: nowrap; }
+@media (max-width: 700px) { #caseForm .picker-results { max-height: none; overflow: visible; } }
+
+#caseForm .osteotomy-details { margin-top: 20px; }
+#caseForm .osteotomy-details h4 { font-size: .9rem; font-weight: 600; margin: 0; }
+#caseForm .osteotomy-details .grid { margin-top: 12px; }
+#caseForm .osteotomy-details .quick-options button { flex: 1; }

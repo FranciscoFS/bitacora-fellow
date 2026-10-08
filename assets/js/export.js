@@ -13,6 +13,8 @@ window.BF = window.BF || {};
     ['comorbilidades', 'Comorbilidades'], ['cirujano', 'Cirujano supervisor'], ['rol', 'Mi rol'],
     ['procedimientoPrincipal', 'Procedimiento principal'], ['_asociados', 'Procedimientos asociados'], ['_pasos', 'Pasos que realicé'],
     ['injertoLca', 'Tipo de injerto LCA'], ['tecnicaMeniscal', 'Técnica de sutura meniscal'],
+    ['osteotomiaTibialTipo', 'Osteotomía tibial alta: tipo'], ['osteotomiaTibialLado', 'Osteotomía tibial alta: lado de la cuña'],
+    ['osteotomiaFemoralTipo', 'Osteotomía femoral distal: tipo'], ['osteotomiaFemoralLado', 'Osteotomía femoral distal: lado de la cuña'],
     ['abordaje', 'Abordaje'], ['anestesia', 'Anestesia'], ['duracionMin', 'Duración (min)'],
     ['torniquete', 'Torniquete'], ['torniqueteMin', 'Isquemia (min)'], ['hallazgos', 'Hallazgos'],
     ['implantes', 'Implantes'], ['complicacionIntraop', 'Complicación intraop.'],

@@ -21,7 +21,7 @@ function app({ choices = [], storageFails = false } = {}) {
     }
   });
   context.window = context;
-  for (const file of ['config', 'util', 'store']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', `${file}.js`), 'utf8'), context);
+  for (const file of ['config', 'util', 'store', 'practice']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', `${file}.js`), 'utf8'), context);
   context.BF.util.choose = async (options) => { messages.push(options); return choices.shift() ?? null; };
   context.BF.util.toast = () => {};
   context.BF.util.download = (name, content) => downloads.push({ name, content });
@@ -31,6 +31,35 @@ function app({ choices = [], storageFails = false } = {}) {
 }
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
+
+test('La práctica reciente respeta fechas inclusivas, año, DST y el rol de cirujano', () => {
+  const { context } = app(), P=context.BF.practice;
+  assert.deepEqual(json(P.dateRange('28','2026-10-02')),{desde:'2026-09-05',hasta:'2026-10-02'});
+  assert.deepEqual(json(P.dateRange('84','2026-01-03')),{desde:'2025-10-12',hasta:'2026-01-03'});
+  assert.deepEqual(json(P.dateRange('28','2024-03-01')),{desde:'2024-02-03',hasta:'2024-03-01'});
+  assert.deepEqual(json(P.dateRange('30','2024-03-01')),{desde:'2024-02-01',hasta:'2024-03-01'});
+  assert.deepEqual(json(P.dateRange('90','2026-01-03')),{desde:'2025-10-06',hasta:'2026-01-03'});
+  assert.deepEqual(json(P.dateRange('year','2026-01-03')),{desde:'2026-01-01',hasta:'2026-01-03'});
+  const yearCases=[caso('previous',{fecha:'2025-12-31'}),caso('start',{fecha:'2026-01-01'}),caso('today',{fecha:'2026-01-03'}),caso('future',{fecha:'2026-01-04'})];
+  assert.equal(P.summarize(yearCases,P.dateRange('year','2026-01-03')).total,2);
+  const cases=[caso('before',{fecha:'2026-09-04'}),caso('start',{fecha:'2026-09-05'}),caso('end',{fecha:'2026-10-02',rol:'Cirujano (independiente)'}),caso('future',{fecha:'2026-10-03'}),caso('observer',{rol:'Observador'}),caso('missing',{fecha:''})];
+  const scope={...P.dateRange('28','2026-10-02'),role:'surgeon'};
+  assert.equal(P.summarize(cases,scope).total,2);
+  assert.equal(P.summarize(cases,{...scope,role:'Observador'}).total,1);
+  assert.equal(P.summarize(cases,{...P.dateRange('all'),role:''}).total,6);
+});
+
+test('Las tarjetas ordenan cada procedimiento por frecuencia y abren exactamente sus casos', () => {
+  const { context }=app(), P=context.BF.practice;
+  const cases=Array.from({length:9},(_,i)=>caso(String(i),{procedimientoPrincipal:'Procedimiento '+i,procedimientosAsociados:['Procedimiento 0']}));
+  cases.push(caso('repeat',{procedimientoPrincipal:'Procedimiento 0'}));
+  const scope={role:''}, summary=P.summarize(cases,scope);
+  assert.equal(summary.total,10);assert.equal(summary.procedures[0].value,2);
+  assert.equal(summary.tiles.length,9);assert.equal(summary.tiles[0].name,'Procedimiento 0');
+  assert.equal(summary.tiles.reduce((sum,tile)=>sum+tile.value,0),summary.total);
+  for(const tile of summary.tiles)assert.equal(cases.filter(c=>P.matches(c,{...scope,procedures:tile.procedures})).length,tile.value);
+  assert.equal(P.summarize([],scope).tiles.length,0);
+});
 
 test('Las metas agrupadas cuentan cada caso una vez y respetan el criterio de cirujano', () => {
   const { S } = app(); const ptr = 'Prótesis total de rodilla (PTR)', robot = 'Prótesis total con navegación/robótica';
@@ -60,11 +89,11 @@ test('Las combinaciones de metas viajan en JSON, almacenamiento local y sincroni
   target.S.removeObjetivo(ptr); assert.equal(target.S.getGoalGroups()[ptr], undefined);
 });
 
-test('Reducción y osteosíntesis son procedimientos de Trauma y se vinculan al diagnóstico sin cambiarlo', () => {
+test('Reducción y osteosíntesis son procedimientos de Fracturas y se vinculan al diagnóstico sin cambiarlo', () => {
   const { context, S, E } = app(); const C = context.BF.CONFIG;
   for (const p of ['Reducción', 'Osteosíntesis', 'Reducción y osteosíntesis']) {
     assert.ok(C.PROCEDIMIENTOS.includes(p));
-    assert.equal(C.procedureArea(p), 'Trauma');
+    assert.equal(C.procedureArea(p), 'Fracturas');
   }
   S.add(caso('trauma-pair', { diagnostico: 'Fractura Platillos Tibiales', procedimientoPrincipal: 'Reducción y osteosíntesis' }));
   const steps = C.personalStepsFor(S.get('trauma-pair'));
@@ -147,19 +176,19 @@ test('El patrón y Schenck se conservan al editar y recuperar el JSON', () => {
   assert.equal(S.normalize(caso('old')).clasificacionMultiligamentaria, '');
 });
 
-test('Trauma usa los nombres del servicio sin desplazar las otras áreas', () => {
+test('Fracturas usa los nombres del servicio sin desplazar las otras áreas', () => {
   const { context } = app();
   const C = context.BF.CONFIG;
   for (const procedure of ['Fractura Fémur Distal', 'Fractura Periprotésica', 'Fractura Platillos Tibiales', 'Fractura de Rótula', 'Fractura Avulsiva Espinas Tibiales LCA / LCP']) {
     assert.ok(C.PROCEDIMIENTOS.includes(procedure));
-    assert.equal(C.procedureArea(procedure), 'Trauma');
+    assert.equal(C.procedureArea(procedure), 'Fracturas');
   }
   assert.equal(C.procedureArea('Prótesis total de rodilla (PTR)'), 'Artroplastia');
   assert.equal(C.procedureArea('Microfracturas'), 'Cartílago');
   assert.equal(C.procedureArea('Sinovectomía (artroscópica/abierta)'), 'Otros');
 });
 
-test('Los nombres antiguos de Trauma conservan casos y metas sin duplicar procedimientos', () => {
+test('Los nombres antiguos de Fracturas conservan casos y metas sin duplicar procedimientos', () => {
   const { S, E } = app();
   const preview = E.previewImport({ casos: [caso('trauma', { procedimientoPrincipal: 'Fractura de meseta tibial: osteosíntesis', procedimientosAsociados: ['Fractura de rótula: osteosíntesis', 'Fractura de Rótula'] })], objetivos: { 'Fractura de meseta tibial: osteosíntesis': 19 } });
   E.applyImport(preview, 'replace');
@@ -186,10 +215,10 @@ test('Los datos postoperatorios antiguos se conservan sin contar como complicaci
 test('Injerto y técnica corresponden al procedimiento principal o asociado y se conservan en el JSON', () => {
   const { context, S, E } = app();
   const details = context.BF.CONFIG.procedureDetailsFor;
-  assert.deepEqual(json(details(['Reconstrucción de LCA', 'Reparación meniscal (sutura)'])), { injertoLca: true, tecnicaMeniscal: true });
+  assert.deepEqual(json(details(['Reconstrucción de LCA', 'Reparación meniscal (sutura)'])), { injertoLca: true, tecnicaMeniscal: true, osteotomiaTibial: false, osteotomiaFemoral: false });
   assert.equal(details(['Revisión de reconstrucción de LCA']).injertoLca, true);
   assert.equal(details(['Osteotomía tibial alta + LCA']).injertoLca, true);
-  assert.deepEqual(json(details(['Meniscectomía parcial'])), { injertoLca: false, tecnicaMeniscal: false });
+  assert.deepEqual(json(details(['Meniscectomía parcial'])), { injertoLca: false, tecnicaMeniscal: false, osteotomiaTibial: false, osteotomiaFemoral: false });
   S.add(caso('tecnica', { injertoLca: 'Isquiotibiales', tecnicaMeniscal: 'All-inside', procedimientosAsociados: ['Reparación meniscal (sutura)'] }));
   const saved = json(S.packageData());
   assert.equal(saved.casos[0].injertoLca, 'Isquiotibiales');
@@ -316,4 +345,33 @@ test('Guardar durante una subida mantiene el siguiente cambio pendiente', async 
   context.BF.github = { write: () => new Promise((resolve) => { release = resolve; }) };
   const sending = S.push({ silent: true }); S.add(caso('b')); release({ sha: 'new' }); await sending;
   assert.equal(S.state.dirty, true); assert.equal(S.state.status, 'pending');
+});
+
+
+test('Las osteotomías tibial y femoral conservan detalles independientes en almacenamiento, JSON y CSV', () => {
+  const { context, S, E } = app(), C = context.BF.CONFIG;
+  assert.equal(C.procedureDetailsFor(['Osteotomía tibial alta (HTO)']).osteotomiaTibial, true);
+  assert.equal(C.procedureDetailsFor(['Osteotomía tibial alta + LCA']).osteotomiaTibial, true);
+  assert.equal(C.procedureDetailsFor(['Osteotomía femoral distal (DFO)']).osteotomiaFemoral, true);
+  const both = C.procedureDetailsFor(['Osteotomía tibial alta (HTO)', 'Osteotomía femoral distal (DFO)']);
+  assert.equal(both.osteotomiaTibial, true); assert.equal(both.osteotomiaFemoral, true);
+  assert.equal(C.procedureDetailsFor(['Reconstrucción de LCA']).osteotomiaTibial, false);
+  assert.equal(C.procedureDetailsFor(['Reconstrucción de LCA']).osteotomiaFemoral, false);
+  S.add(caso('osteotomias', {
+    procedimientoPrincipal: 'Osteotomía tibial alta (HTO)', procedimientosAsociados: ['Osteotomía femoral distal (DFO)'],
+    osteotomiaTibialTipo: 'Apertura', osteotomiaTibialLado: 'Medial',
+    osteotomiaFemoralTipo: 'Cierre', osteotomiaFemoralLado: 'Lateral'
+  }));
+  S.loadLocal();
+  const backup = json(S.packageData()), target = app();
+  target.E.applyImport(target.E.previewImport(backup), 'replace');
+  const saved = target.S.get('osteotomias');
+  for (const [key, value] of Object.entries({ osteotomiaTibialTipo: 'Apertura', osteotomiaTibialLado: 'Medial', osteotomiaFemoralTipo: 'Cierre', osteotomiaFemoralLado: 'Lateral' })) {
+    assert.equal(saved[key], value);
+    assert.equal(S.normalize(caso('antiguo'))[key], '');
+  }
+  const csv = E.toCsv(S.all()).split('\r\n'), labels = csv[0].split(';'), values = csv[1].split(';');
+  for (const [label, value] of [['Osteotomía tibial alta: tipo', 'Apertura'], ['Osteotomía tibial alta: lado de la cuña', 'Medial'], ['Osteotomía femoral distal: tipo', 'Cierre'], ['Osteotomía femoral distal: lado de la cuña', 'Lateral']]) {
+    assert.equal(values[labels.indexOf(label)], '"' + value + '"');
+  }
 });

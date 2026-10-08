@@ -9,6 +9,9 @@ window.BF = window.BF || {};
   let current = null;      // caso abierto en el panel
   let armado = null;       // temporizador de la confirmación en dos pasos
   let focoPrevio = null;   // elemento que tenía el foco antes de abrir el panel
+  let scope = null;
+  function setScope(value, label) { scope = value; $('#listScopeText').textContent=label; $('#tableSearch').value='';render(); }
+  function clearScope() { scope=null;$('#tableSearch').value='';render(); }
 
   /* ───────── Foco del panel (diálogo accesible) ───────── */
 
@@ -63,7 +66,30 @@ window.BF = window.BF || {};
     return l;
   }
 
+  const categoryTones = {
+    menisco: 'meniscus', ligamentos: 'ligaments', patelofemoral: 'patellofemoral',
+    artroplastia: 'arthroplasty', osteotomias: 'osteotomy', cartilago: 'cartilage',
+    fracturas: 'fracture', otros: 'other'
+  };
+  const tagKey = (tag) => String(tag).trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+  function caseTags(c) {
+    const category = c.procedimientoPrincipal ? C.procedureArea(c.procedimientoPrincipal) : '';
+    const seen = new Set();
+    const tags = [category, ...(c.tags || [])].filter((tag) => {
+      const key = tagKey(tag);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (!tags.length) return '';
+    return `<div class="case-tags" role="group" aria-label="Etiquetas del caso">${tags.map((tag) => {
+      const tone = categoryTones[tagKey(tag)];
+      return `<span class="case-tag${tone ? ' case-tag--' + tone : ''}">${esc(tag)}</span>`;
+    }).join('')}</div>`;
+  }
+
   function render() {
+    $('#listScope').hidden=!scope;
     const q = $('#tableSearch').value.trim().toLowerCase();
     const rows = visibleCases();
     const tbody = $('#caseTable tbody');
@@ -73,24 +99,24 @@ window.BF = window.BF || {};
       const complLabel = 'Intraop.';
       const lat = (c.lateralidad || '').charAt(0) || '—';
       return `<tr data-id="${c.id}">
-        <td><button class="code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.codigo)}</button></td>
+        <td class="wrap-cell"><button class="procedure-link code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.procedimientoPrincipal || 'Sin procedimiento')}</button>
+          ${(c.procedimientosAsociados || []).length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}${caseTags(c)}</td>
         <td>${esc(fmtDate(c.fecha))}</td>
         <td><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || '—')}</span></td>
-        <td class="wrap-cell" title="${esc(c.procedimientoPrincipal)}">${esc(c.procedimientoPrincipal || '—')}
-          ${c.procedimientosAsociados.length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}</td>
+        <td class="case-code">${esc(c.codigo)}</td>
         <td>${esc(c.lateralidad || '—')}</td>
         <td>${esc(c.abordaje || '—').replace('Artroscópico + mini-abierto', 'Artro + mini')}</td>
         <td class="num">${c.duracionMin ?? '—'}</td>
-        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="pill good">No</span>'}</td>
+        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="muted">No</span>'}</td>
         <td class="col-actions"><button class="icon-btn" data-act="edit" title="Editar" aria-label="Editar">✎</button></td>
       </tr>`;
     }).join('');
-    $('#mobileCases').innerHTML = rows.map((c) => `<article class="case-item" data-id="${esc(c.id)}"><button type="button" class="case-open" aria-label="Ver el detalle del caso ${esc(c.codigo)}"><strong>${esc(c.procedimientoPrincipal || 'Procedimiento sin registrar')}</strong><span class="case-meta">${esc(fmtDate(c.fecha))} · ${esc(c.lateralidad || 'Sin lateralidad')} · ${esc(c.codigo)}</span></button><div class="case-bottom"><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || 'Sin rol')}</span><button class="icon-btn" type="button" data-act="edit" aria-label="Editar ${esc(c.codigo)}">✎</button></div>${S.hasComplication(c) ? '<p class="small case-warning">Complicación registrada</p>' : ''}</article>`).join('');
+    $('#mobileCases').innerHTML = rows.map((c) => `<article class="case-item" data-id="${esc(c.id)}"><button type="button" class="case-open" aria-label="Ver el detalle del caso ${esc(c.codigo)}"><strong>${esc(c.procedimientoPrincipal || 'Procedimiento sin registrar')}</strong><span class="case-meta">${esc(fmtDate(c.fecha))} · ${esc(c.lateralidad || 'Sin lateralidad')} · ${esc(c.codigo)}</span></button>${caseTags(c)}<div class="case-bottom"><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || 'Sin rol')}</span><button class="icon-btn" type="button" data-act="edit" aria-label="Editar ${esc(c.codigo)}">✎</button></div>${S.hasComplication(c) ? '<p class="small case-warning">Complicación registrada</p>' : ''}</article>`).join('');
 
     const total = S.all().length;
     $('#tableCount').textContent = total === 0
       ? 'Todavía no hay casos registrados.'
-      : `${rows.length} de ${total} caso(s) · ${S.metrics(rows).duracionTotal} min acumulados`;
+      : `${rows.length} de ${total} ${total === 1 ? 'caso' : 'casos'} · ${S.metrics(rows).duracionTotal} min acumulados`;
     $('#tableEmpty').hidden = rows.length > 0;
     $('#caseTable').hidden = rows.length === 0;
     $('#tableWrap').hidden = rows.length === 0;
@@ -100,19 +126,7 @@ window.BF = window.BF || {};
     $('#btnExportList').textContent = `Exportar resultados (${rows.length})`;
     $('#btnExportList').disabled = !rows.length;
   }
-  let frequentScope = null;
-  function setFrequentScope(scope, label = '') {
-    frequentScope = scope;
-    $('#frequentScope').hidden = !scope;
-    $('#frequentScopeLabel').textContent = label;
-    $('#tableSearch').value = '';
-    render();
-  }
-  function visibleCases() {
-    const query = $('#tableSearch').value.trim().toLowerCase();
-    const cases = query ? S.filter({ q: query }) : S.all();
-    return sortCases(frequentScope ? cases.filter((caso) => caso.procedimientoPrincipal === frequentScope.procedure && (!frequentScope.from || caso.fecha >= frequentScope.from) && (!frequentScope.to || caso.fecha <= frequentScope.to)) : cases);
-  }
+  function visibleCases() { const q = $('#tableSearch').value.trim().toLowerCase(); const list=q?S.filter({q}):S.all();return sortCases(scope?list.filter(c=>BF.practice.matches(c,scope)):list); }
 
   /* ───────── Modal de detalle ───────── */
 
@@ -152,6 +166,10 @@ window.BF = window.BF || {};
       ${row('Procedimientos asociados', (c.procedimientosAsociados || []).join(' · '))}
       ${row('Tipo de injerto · LCA', c.injertoLca)}
       ${row('Técnica de sutura meniscal', c.tecnicaMeniscal)}
+      ${row('Osteotomía tibial alta · tipo', c.osteotomiaTibialTipo)}
+      ${row('Osteotomía tibial alta · lado de la cuña', c.osteotomiaTibialLado)}
+      ${row('Osteotomía femoral distal · tipo', c.osteotomiaFemoralTipo)}
+      ${row('Osteotomía femoral distal · lado de la cuña', c.osteotomiaFemoralLado)}
       ${row('Hallazgos', c.hallazgos)}
       ${row('Implantes', c.implantes)}
 
@@ -161,7 +179,7 @@ window.BF = window.BF || {};
       ${row('Complicación intraoperatoria', c.complicacionIntraop ? `Sí — ${c.complicacionIntraopDetalle || 'sin detalle'}` : 'No')}
 
       ${section('Notas')}
-      ${row('Etiquetas', (c.tags || []).join(', '))}
+      ${caseTags(c) ? `<dt>Etiquetas</dt><dd>${caseTags(c)}</dd>` : ''}
       ${row('Notas', c.notas)}
       ${row('Creado', fmtDateTime(c.creado))}
       ${row('Última modificación', fmtDateTime(c.actualizado))}
@@ -213,7 +231,8 @@ window.BF = window.BF || {};
     $('#tableSearch').addEventListener('input', search);
     $('#tableSort').addEventListener('change', render);
     $('#btnNewFromList').addEventListener('click', () => BF.form.startNew());
-    $('#btnClearSearch').addEventListener('click', () => { $('#tableSearch').value = ''; render(); });
+    $('#btnClearSearch').addEventListener('click', () => { $('#tableSearch').value='';render(); });
+    $('#btnClearScope').addEventListener('click', clearScope);
     $('#btnExportList').addEventListener('click', () => BF.exporter.exportCsv(visibleCases()));
 
     $('#modalClose').addEventListener('click', close);
@@ -237,5 +256,5 @@ window.BF = window.BF || {};
     render();
   }
 
-  BF.bitacora = { init, render, open, close, setFrequentScope };
+  BF.bitacora = { init, render, open, close, setScope, clearScope };
 })();

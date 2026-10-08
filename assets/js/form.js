@@ -15,19 +15,64 @@ window.BF = window.BF || {};
   });
   const normalizedQuery = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const fields = () => Array.from(form.elements).filter((f) => f.name && !f.name.startsWith('fup_'));
-  const areas = ['Todas', 'Menisco', 'Ligamentos', 'Patelofemoral', 'Artroplastia', 'Osteotomías', 'Cartílago', 'Trauma', 'Otros'];
-  let principalArea = 'Todas', associatedArea = 'Todas';
+  const areas = ['Todas', 'Menisco', 'Ligamentos', 'Patelofemoral', 'Artroplastia', 'Osteotomías', 'Cartílago', 'Fracturas', 'Otros'];
+  let principalArea = 'Todas', associatedArea = 'Todas', principalExpanded = true;
   const areaOf = C.procedureArea;
   const optionMarkup = (p, selected, attr) => `<button class="catalog-option${selected ? ' is-selected' : ''}" type="button" ${attr}="${esc(p)}" aria-pressed="${selected}"><span><small>${esc(areaOf(p))}</small><strong>${esc(p)}</strong></span><span class="option-action" aria-hidden="true">${selected ? '✓' : '+'}</span></button>`;
   function renderCategories(id, current) {
-    $(id).innerHTML = areas.map((a) => `<button type="button" data-area="${esc(a)}" aria-pressed="${a === current}">${esc(a)}</button>`).join('');
+    $(id).innerHTML = areas.map((a) => `<button type="button" data-area="${esc(a)}" aria-pressed="${a === current}">${esc(a === 'Todas' && id === '#principalCategories' ? 'Frecuentes' : a)}</button>`).join('');
   }
   function renderDiagnosis() {
-    const query = normalizedQuery(form.elements.diagnostico.value);
+    const query = normalizedQuery(form.elements.diagnostico.value.trim());
     const previous = [...new Set(S.all().map((c) => c.diagnostico).filter(Boolean))];
-    const matches = previous.filter((d) => normalizedQuery(d).includes(query) && normalizedQuery(d) !== query).slice(0, 4);
-    const message = previous.some((d) => normalizedQuery(d) === query) ? 'Este diagnóstico está en tus registros. Puedes ajustar el texto para este caso.' : 'Sin referencias coincidentes. Registra tu diagnóstico en el campo de arriba.';
-    $('#diagnosisOptions').innerHTML = matches.length ? matches.map((d) => `<button type="button" data-diagnosis="${esc(d)}"><span>${esc(d)}</span><span aria-hidden="true">↗</span></button>`).join('') : `<p class="picker-empty">${message}</p>`;
+    const matches = query ? previous.filter((d) => normalizedQuery(d).includes(query) && normalizedQuery(d) !== query).slice(0, 4) : [];
+    $('#diagnosisOptions').hidden = !matches.length;
+    $('#diagnosisOptions').innerHTML = matches.map((d) => `<button type="button" data-diagnosis="${esc(d)}"><span>${esc(d)}</span><span aria-hidden="true">↗</span></button>`).join('');
+  }
+
+  function initChoices() {
+    const labels = { Derecha: 'D', Izquierda: 'Izq' };
+    for (const [name, values] of [['lateralidad', C.LATERALIDADES], ['rol', C.ROLES], ['abordaje', C.ABORDAJES], ['osteotomiaTibialTipo', C.OSTEOTOMIA_TIPOS], ['osteotomiaTibialLado', C.OSTEOTOMIA_LADOS], ['osteotomiaFemoralTipo', C.OSTEOTOMIA_TIPOS], ['osteotomiaFemoralLado', C.OSTEOTOMIA_LADOS]]) {
+      fillSelect(form.elements[name], values, '');
+      const group = form.querySelector('[data-choice="' + name + '"]');
+      group.innerHTML = values.map((value) => `<button type="button" data-choice-value="${esc(value)}" aria-pressed="false" aria-label="${esc(value)}">${esc(labels[value] || value)}</button>`).join('');
+      group.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-choice-value]'); if (!button) return;
+        const field = form.elements[name];
+        field.value = field.value === button.dataset.choiceValue ? '' : button.dataset.choiceValue;
+        changed();
+      });
+    }
+  }
+
+  function syncChoices() {
+    $$('[data-choice]', form).forEach((group) => {
+      const field = form.elements[group.dataset.choice];
+      $$('[data-choice-value]', group).forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.choiceValue === field.value)));
+      if (field.hasAttribute('aria-invalid')) group.setAttribute('aria-invalid', 'true');
+      else group.removeAttribute('aria-invalid');
+      if (field.hasAttribute('aria-describedby')) group.setAttribute('aria-describedby', field.getAttribute('aria-describedby'));
+      else group.removeAttribute('aria-describedby');
+    });
+  }
+
+  function focusField(field) {
+    if (field.name === 'procedimientoPrincipal') {
+      principalExpanded = true;
+      $('#principalCatalog').hidden = false;
+      $('#principalSearch').focus();
+    } else if (form.querySelector('[data-choice="' + field.name + '"]')) {
+      form.querySelector('[data-choice="' + field.name + '"] button').focus();
+    } else field.focus();
+  }
+
+  function frequentProcedures() {
+    const counts = new Map();
+    S.all().forEach((c) => {
+      const p = C.procedureName(c.procedimientoPrincipal);
+      if (C.PROCEDIMIENTOS_PRINCIPALES.includes(p)) counts.set(p, (counts.get(p) || 0) + 1);
+    });
+    return [...new Set([...Array.from(counts).sort((a, b) => b[1] - a[1]).map(([p]) => p), ...Object.keys(C.DEFAULT_OBJETIVOS), ...C.PROCEDIMIENTOS_PRINCIPALES])].slice(0, 6);
   }
 
   function fillSelect(select, values, placeholder) {
@@ -37,23 +82,25 @@ window.BF = window.BF || {};
   }
 
   function renderPrincipal() {
-    const query = normalizedQuery($('#principalSearch').value);
+    const query = normalizedQuery($('#principalSearch').value.trim());
     const current = form.elements.procedimientoPrincipal.value;
-    const matches = C.PROCEDIMIENTOS.filter((p) => normalizedQuery(p).includes(query) && (principalArea === 'Todas' || areaOf(p) === principalArea));
-    const options = current && !matches.includes(current) ? [current, ...matches] : matches;
+    const matches = !query && principalArea === 'Todas' ? frequentProcedures() : C.PROCEDIMIENTOS_PRINCIPALES.filter((p) => normalizedQuery(p).includes(query) && (principalArea === 'Todas' || areaOf(p) === principalArea));
+    // Keep the complete catalog in the form control, independently of visible results.
+    const options = current && !C.PROCEDIMIENTOS_PRINCIPALES.includes(current) ? [current, ...C.PROCEDIMIENTOS_PRINCIPALES] : C.PROCEDIMIENTOS_PRINCIPALES;
     fillSelect(form.elements.procedimientoPrincipal, options, 'Elegir procedimiento');
-    $('#principalSelected').innerHTML = current ? `<span class="selection-check" aria-hidden="true">✓</span><span><small>Seleccionado</small><strong>${esc(current)}</strong></span>` : '<span class="selection-check" aria-hidden="true">—</span><span>Selecciona una intervención del catálogo</span>';
+    $('#principalSelected').hidden = !current;
+    $('#principalSelected').innerHTML = current ? `<span class="selection-check" aria-hidden="true">✓</span><strong>${esc(current)}</strong><button class="btn btn-ghost" type="button" id="changePrincipal" aria-expanded="${principalExpanded}" aria-controls="principalCatalog">Cambiar</button>` : '';
+    $('#principalCatalog').hidden = !!current && !principalExpanded;
     renderTraumaContext();
     renderCategories('#principalCategories', principalArea);
-    $('#principalOptions').innerHTML = matches.length ? matches.slice(0, 6).map((p) => optionMarkup(p, p === current, 'data-principal')).join('') : '<p class="picker-empty">No encontramos coincidencias. Prueba otra búsqueda o área.</p>';
-    $('#principalCount').textContent = `${matches.length} procedimiento(s)${matches.length > 6 ? ' · Se muestran 6. Filtra por área o nombre para ver más.' : ''}`;
+    $('#principalOptions').innerHTML = matches.length ? matches.map((p) => optionMarkup(p, p === current, 'data-principal')).join('') : '<p class="picker-empty">Sin coincidencias.</p>';
   }
 
   function renderTraumaContext() {
     const current = form.elements.procedimientoPrincipal.value;
     const paired = ['Reducción', 'Osteosíntesis', 'Reducción y osteosíntesis'].includes(current);
     $('#traumaProcedureContext').hidden = !paired;
-    $('#traumaProcedureContext').textContent = paired ? form.elements.diagnostico.value.trim() ? `${current} · ${form.elements.diagnostico.value.trim()}` : 'Escribe el diagnóstico para completar este caso de Trauma.' : '';
+    $('#traumaProcedureContext').textContent = paired ? form.elements.diagnostico.value.trim() ? `${current} · ${form.elements.diagnostico.value.trim()}` : 'Escribe el diagnóstico para completar este caso de Fracturas.' : '';
   }
 
   function renderChips() {
@@ -63,9 +110,8 @@ window.BF = window.BF || {};
     const query = normalizedQuery($('#associatedSearch').value);
     const options = C.PROCEDIMIENTOS.filter((p) => p !== principal && !selectedProc.has(p) && normalizedQuery(p).includes(query) && (associatedArea === 'Todas' || areaOf(p) === associatedArea));
     renderCategories('#associatedCategories', associatedArea);
-    $('#procOptions').innerHTML = options.length ? options.slice(0, 4).map((p) => optionMarkup(p, false, 'data-proc')).join('') : '<p class="picker-empty">Sin coincidencias disponibles. Cambia el área o la búsqueda.</p>';
-    if (!selectedProc.size) $('#procChips').innerHTML = '<span class="selection-placeholder">Aún no agregaste procedimientos adicionales</span>';
-    $('#associatedCount').textContent = `${selectedProc.size} seleccionado(s) · ${options.length} disponibles${options.length > 4 ? ' · Refina la búsqueda para ver más.' : ''}`;
+    $('#procOptions').innerHTML = options.length ? (query || associatedArea !== 'Todas' ? options : options.slice(0, 4)).map((p) => optionMarkup(p, false, 'data-proc')).join('') : '<p class="picker-empty">Sin coincidencias disponibles. Cambia el área o la búsqueda.</p>';
+    $('#procChips').hidden = !selectedProc.size;
   }
 
   function capture() {
@@ -91,6 +137,12 @@ window.BF = window.BF || {};
     const applicable = C.procedureDetailsFor([c.procedimientoPrincipal, ...c.procedimientosAsociados]);
     if (!applicable.injertoLca) c.injertoLca = '';
     if (!applicable.tecnicaMeniscal) c.tecnicaMeniscal = '';
+    for (const family of ['Tibial', 'Femoral']) {
+      if (!applicable['osteotomia' + family]) {
+        c['osteotomia' + family + 'Tipo'] = '';
+        c['osteotomia' + family + 'Lado'] = '';
+      }
+    }
     if (!C.isMultiligamentaryDiagnosis(c.diagnostico)) { c.patronMultiligamentario = ''; c.clasificacionMultiligamentaria = ''; }
     if (!c.torniquete) c.torniqueteMin = null;
     if (!c.complicacionIntraop) c.complicacionIntraopDetalle = '';
@@ -98,6 +150,10 @@ window.BF = window.BF || {};
   }
 
   function updateSections() {
+    for (const [selector, count] of [['.associated-picker', selectedProc.size], ['.personal-details', personalSteps.size]]) {
+      const section = $(selector);
+      section.querySelector('summary .optional-label').textContent = count ? `${count} seleccionado${count === 1 ? '' : 's'}` : 'Opcional';
+    }
     $$('.form-section').forEach((section) => {
       const filled = $$('input,select,textarea', section).filter((f) => f.name !== 'codigo' && (f.type === 'checkbox' ? f.checked : f.value !== '')).length;
       const extra = section.querySelector('#procChips') ? selectedProc.size : 0;
@@ -111,10 +167,15 @@ window.BF = window.BF || {};
     $('#multiligamentaryDetails').hidden = !multiligamentary;
     for (const key of ['patronMultiligamentario', 'clasificacionMultiligamentaria']) form.elements[key].disabled = !multiligamentary;
     const applicable = C.procedureDetailsFor([form.elements.procedimientoPrincipal.value, ...selectedProc]);
-    $('#procedureSpecific').hidden = !applicable.injertoLca && !applicable.tecnicaMeniscal;
+    $('#procedureSpecific').hidden = !Object.values(applicable).some(Boolean);
     for (const [field, key] of [['#graftField', 'injertoLca'], ['#meniscalTechniqueField', 'tecnicaMeniscal']]) {
       $(field).hidden = !applicable[key];
       form.elements[key].disabled = !applicable[key];
+    }
+    for (const family of ['Tibial', 'Femoral']) {
+      const visible = applicable['osteotomia' + family];
+      $('#osteotomy' + family + 'Details').hidden = !visible;
+      for (const suffix of ['Tipo', 'Lado']) form.elements['osteotomia' + family + suffix].disabled = !visible;
     }
     $$('[data-conditional]', form).forEach((container) => {
       const visible = form.elements[container.dataset.conditional].checked;
@@ -127,7 +188,7 @@ window.BF = window.BF || {};
 
   function renderPersonalSteps() {
     const options = [...new Set([...C.personalStepsFor(capture()), ...personalSteps])];
-    $('#personalStepsOptions').innerHTML = options.length ? options.map((step) => `<button type="button" class="chip${personalSteps.has(step) ? ' on' : ''}" data-personal-step="${esc(step)}" aria-pressed="${personalSteps.has(step)}">${esc(step)} <span aria-hidden="true">${personalSteps.has(step) ? '✓' : '+'}</span></button>`).join('') : '<span class="muted small">Selecciona un procedimiento para ver opciones.</span>';
+    $('#personalStepsOptions').innerHTML = options.length ? options.map((step) => `<button type="button" class="chip${personalSteps.has(step) ? ' on' : ''}" data-personal-step="${esc(step)}" aria-pressed="${personalSteps.has(step)}">${esc(step)} <span aria-hidden="true">${personalSteps.has(step) ? '✓' : '+'}</span></button>`).join('') : '';
   }
 
   function renderTags() {
@@ -135,14 +196,14 @@ window.BF = window.BF || {};
     $('#autoTagChips').innerHTML = suggested.length ? suggested.map((tag) => {
       const included = !excludedAutoTags.has(tag);
       return `<button type="button" class="chip${included ? ' on' : ''}" data-auto-tag="${esc(tag)}" aria-pressed="${included}" aria-label="${included ? 'Quitar' : 'Incluir'} etiqueta ${esc(tag)}">${esc(tag)} <span aria-hidden="true">${included ? '×' : '+'}</span></button>`;
-    }).join('') : '<span class="muted small">Aparecerán al elegir el diagnóstico y los procedimientos.</span>';
+    }).join('') : '';
   }
 
   function persistDraft() {
     dirty = fingerprint() !== baseline;
-    if (!dirty) { store.del('draft'); $('#draftStatus').textContent = 'Los campos con * son obligatorios.'; return; }
+    if (!dirty) { store.del('draft'); $('#draftStatus').textContent = ''; return; }
     const saved = store.set('draft', { caso: capture(), editingId, baseline, updated: new Date().toISOString() });
-    $('#draftStatus').textContent = saved ? 'Borrador guardado en este dispositivo. Todavía no es un caso registrado.' : 'Borrador en memoria. Exporta los datos antes de cerrar esta pestaña.';
+    $('#draftStatus').textContent = saved ? 'Borrador guardado' : 'Borrador en memoria. Exporta los datos antes de cerrar esta pestaña.';
   }
 
   function clearInvalid() {
@@ -150,11 +211,12 @@ window.BF = window.BF || {};
     $$('.field-error', form).forEach((e) => e.remove());
     $$('[aria-invalid]', form).forEach((f) => { f.removeAttribute('aria-invalid'); f.removeAttribute('aria-describedby'); f.classList.remove('is-invalid'); });
     $$('.has-error', form).forEach((s) => s.classList.remove('has-error'));
+    syncChoices();
   }
 
   function changed() {
     conditionals(); updateSections();
-    $$('[aria-invalid]', form).forEach((f) => {
+    $$('input[aria-invalid],select[aria-invalid],textarea[aria-invalid]', form).forEach((f) => {
       if (f.checkValidity()) {
         if (f.name === 'procedimientoPrincipal') $('#principalSearch').removeAttribute('aria-describedby');
         const error = document.getElementById(f.getAttribute('aria-describedby'));
@@ -162,7 +224,7 @@ window.BF = window.BF || {};
         f.removeAttribute('aria-invalid'); f.removeAttribute('aria-describedby'); f.classList.remove('is-invalid');
       }
     });
-    persistDraft();
+    syncChoices(); persistDraft();
   }
 
   function write(caso) {
@@ -176,7 +238,7 @@ window.BF = window.BF || {};
     }
     const auto = new Set((caso.autoTags || []).map((t) => t.toLocaleLowerCase()));
     form.elements.tags.value = (Array.isArray(caso.manualTags) ? caso.manualTags : (caso.tags || []).filter((t) => !auto.has(t.toLocaleLowerCase()))).join(', ');
-    principalArea = associatedArea = 'Todas'; renderDiagnosis();
+    principalArea = associatedArea = 'Todas'; principalExpanded = !caso.procedimientoPrincipal; renderDiagnosis(); syncChoices();
     $('#principalSearch').value = ''; $('#associatedSearch').value = '';
     if (caso.procedimientoPrincipal && !Array.from(form.elements.procedimientoPrincipal.options).some((o) => o.value === caso.procedimientoPrincipal)) {
       form.elements.procedimientoPrincipal.add(new Option(caso.procedimientoPrincipal, caso.procedimientoPrincipal));
@@ -184,11 +246,13 @@ window.BF = window.BF || {};
     }
     renderPrincipal(); selectedProc = new Set(caso.procedimientosAsociados || []); renderChips();
     conditionals(); updateSections();
+    $('.associated-picker').open = selectedProc.size > 0;
+    $('.personal-details').open = personalSteps.size > 0;
   }
 
   function setMeta() {
     $('#formTitle').textContent = editingId ? `Editar ${form.elements.codigo.value}` : 'Nuevo caso';
-    $('#formSubtitle').textContent = editingId ? 'Actualiza los detalles y guarda los cambios del mismo registro.' : 'Completa lo esencial. Puedes agregar los detalles después.';
+    $('#formSubtitle').textContent = '';
     $('#btnCancelEdit').hidden = !editingId;
     $('#btnSaveCase').textContent = editingId ? 'Guardar cambios' : 'Guardar caso';
   }
@@ -198,17 +262,17 @@ window.BF = window.BF || {};
     form.reset(); editingId = null; selectedProc.clear(); legacyDetails = keepLegacyDetails();
     excludedAutoTags.clear();
     personalSteps.clear();
-    principalArea = associatedArea = 'Todas';
-    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    principalArea = associatedArea = 'Todas'; principalExpanded = true;
+    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo();
     form.elements.fecha.value = keepDate ? fecha : todayISO();
     if (keepSurgeon) form.elements.cirujano.value = surgeon;
     $('#principalSearch').value = ''; $('#associatedSearch').value = '';
-    $$('.form-section').forEach((s) => { s.open = false; });
+    $$('.form-section, .associated-picker, .personal-details').forEach((s) => { s.open = false; });
     clearInvalid(); renderPrincipal(); renderChips(); renderDiagnosis(); conditionals(); updateSections(); setMeta();
     $('#formMsg').textContent = ''; $('#formMsg').classList.remove('err');
     baseline = fingerprint(); dirty = false;
-    store.del('draft'); $('#draftStatus').textContent = 'Los campos con * son obligatorios.';
+    store.del('draft'); $('#draftStatus').textContent = '';
   }
 
   async function allowDiscard() {
@@ -224,9 +288,9 @@ window.BF = window.BF || {};
   async function edit(id) {
     if (!await allowDiscard()) { BF.app.show('nuevo'); return false; }
     const c = S.get(id); if (!c) return false;
-    clearInvalid(); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    clearInvalid(); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     write(c); editingId = id; setMeta(); baseline = fingerprint(); dirty = false;
-    $('#draftStatus').textContent = 'Los cambios se registran al guardar.';
+    $('#draftStatus').textContent = 'Editando caso';
     $('#formMsg').textContent = ''; BF.app.show('nuevo');
     form.elements.fecha.focus();
     return true;
@@ -244,7 +308,7 @@ window.BF = window.BF || {};
         if (f.name === 'procedimientoPrincipal') $('#principalSearch').setAttribute('aria-describedby', id);
         f.parentElement.append(el('span', { id, class: 'field-error', text: message }));
       });
-      (invalid[0].name === 'procedimientoPrincipal' ? $('#principalSearch') : invalid[0]).focus();
+      syncChoices(); focusField(invalid[0]);
       $('#formMsg').textContent = `Revisa ${invalid.length} campo(s) marcado(s).`; $('#formMsg').classList.add('err');
       return false;
     }
@@ -261,7 +325,7 @@ window.BF = window.BF || {};
     const message = reliable ? `${saved.codigo} ${wasEditing ? 'actualizado' : 'guardado'}. ${S.isConfigured() ? S.state.cfg.auto ? 'Enviando los cambios a GitHub…' : 'Guardado en este dispositivo. Pulsa «Sincronizar ahora» para enviarlo a GitHub.' : 'Guardado en este dispositivo. Conecta GitHub en Ajustes para sincronizar.'}` : `${saved.codigo} permanece en memoria. No se pudo guardar en este dispositivo.`;
     BF.util.toast(message, reliable ? 'ok' : 'err', 6000);
     if (andNew) { $('#formMsg').textContent = message; form.elements.diagnostico.focus(); }
-    else BF.app.show('bitacora');
+    else { BF.bitacora.clearScope(); BF.app.show('bitacora'); }
     return true;
   }
 
@@ -269,15 +333,15 @@ window.BF = window.BF || {};
 
   function init() {
     form = $('#caseForm');
-    fillSelect(form.elements.rol, C.ROLES, 'Elegir rol'); fillSelect(form.elements.abordaje, C.ABORDAJES, 'Elegir abordaje');
-    fillSelect(form.elements.anestesia, C.ANESTESIAS, 'Sin registrar'); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    initChoices();
+    fillSelect(form.elements.anestesia, C.ANESTESIAS, ''); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     const draft = store.get('draft'); resetForm(); refreshDatalist();
     if (draft && draft.caso) {
       write(draft.caso); editingId = S.get(draft.editingId) ? draft.editingId : null;
       if (!editingId) { form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo(); }
       baseline = draft.baseline || baseline; dirty = true; setMeta();
       store.set('draft', { ...draft, editingId, caso: capture() });
-      $('#draftStatus').textContent = 'Borrador recuperado. Complétalo y guarda el caso cuando esté listo.';
+      $('#draftStatus').textContent = 'Borrador recuperado';
     }
     form.addEventListener('submit', (e) => { e.preventDefault(); save(); });
     $('#personalStepsOptions').addEventListener('click', (e) => {
@@ -301,7 +365,15 @@ window.BF = window.BF || {};
     $('#principalOptions').addEventListener('click', (e) => {
       const b = e.target.closest('[data-principal]'); if (!b) return;
       form.elements.procedimientoPrincipal.value = b.dataset.principal;
-      renderPrincipal(); renderChips(); changed(); $('#principalSearch').focus();
+      principalExpanded = false;
+      renderPrincipal(); renderChips(); changed(); $('#changePrincipal').focus();
+    });
+    $('#principalSelected').addEventListener('click', (e) => {
+      if (!e.target.closest('#changePrincipal')) return;
+      principalExpanded = !principalExpanded;
+      renderPrincipal();
+      if (principalExpanded) $('#principalSearch').focus();
+      else $('#changePrincipal').focus();
     });
     $('#principalCategories').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (b) { principalArea = b.dataset.area; renderPrincipal(); $('#principalCategories [aria-pressed="true"]').focus(); } });
     $('#associatedCategories').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (b) { associatedArea = b.dataset.area; renderChips(); $('#associatedCategories [aria-pressed="true"]').focus(); } });
@@ -316,13 +388,31 @@ window.BF = window.BF || {};
     };
     $('#procChips').addEventListener('click', toggleProc); $('#procOptions').addEventListener('click', toggleProc);
     $('#btnSaveAndNew').addEventListener('click', () => save({ andNew: true }));
+    const actionMenu = $('#formMoreActions');
+    const mobileActions = window.matchMedia('(max-width: 780px)');
+    const syncActionMenu = () => { actionMenu.open = !mobileActions.matches; };
+    syncActionMenu();
+    mobileActions.addEventListener('change', syncActionMenu);
+    actionMenu.addEventListener('click', (e) => {
+      if (mobileActions.matches && e.target.closest('button')) actionMenu.open = false;
+    });
+    document.addEventListener('click', (e) => {
+      if (mobileActions.matches && !actionMenu.contains(e.target)) actionMenu.open = false;
+    });
+    actionMenu.addEventListener('keydown', (e) => {
+      if (mobileActions.matches && e.key === 'Escape') {
+        actionMenu.open = false;
+        actionMenu.querySelector('summary').focus();
+      }
+    });
+
     $('#btnResetForm').addEventListener('click', startNew);
     $('#btnCancelEdit').addEventListener('click', async () => { if (await allowDiscard()) { resetForm(); BF.app.show('bitacora'); } });
     S.on('change', () => { if (!editingId) form.elements.codigo.value = S.nextCodigo(); refreshDatalist(); });
   }
   async function restoreDraft(draft) {
     if (!draft || !draft.caso || !await allowDiscard()) return false;
-    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS, 'Elegir procedimiento');
+    fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     write(draft.caso); editingId = S.get(draft.editingId) ? draft.editingId : null;
     if (!editingId) { form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo(); }
     baseline = draft.baseline || ''; dirty = true; setMeta(); persistDraft();

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Cuatro propuestas · Bitácora Fellow</title><link rel="stylesheet" href="assets/comparison.css?v=2"></head>
+<body>
+<!-- THESIS: A neutral comparison tool, not a fifth product style.
+OWN-WORLD: restrained white and navy chrome, four equally weighted candidates.
+STORY: compare real layouts and try the same registration, search and goal flows.
+FIRST VIEWPORT: title, four named tabs, selected direction rationale, live full-width prototype.
+FORM: user requested four working HTML mockups; seed 75aaaece informs candidate diversity.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+<header><div><h1>Cuatro propuestas para Bitácora Fellow</h1><p>Amarillo y celeste. Cuatro estilos y una misma prioridad: registrar el caso recién terminado.</p></div><button id="compareMode" type="button" aria-pressed="false">Comparar dos</button></header>
+<main>
+<nav class="directions" aria-label="Propuesta visual">
+<button type="button" data-style="station" aria-pressed="true"><span class="sample station-sample" aria-hidden="true"></span><strong>Estación clínica</strong><small>Compacta y funcional</small></button>
+<button type="button" data-style="pulse" aria-pressed="false"><span class="sample pulse-sample" aria-hidden="true"></span><strong>Pulso</strong><small>Suiza y expresiva</small></button>
+<button type="button" data-style="daybook" aria-pressed="false"><span class="sample daybook-sample" aria-hidden="true"></span><strong>Cuaderno digital</strong><small>Personal y amable</small></button>
+<button type="button" data-style="atlas" aria-pressed="false"><span class="sample atlas-sample" aria-hidden="true"></span><strong>Atlas académico</strong><small>Visual y estructurada</small></button>
+</nav>
+<div class="context"><div><h2 id="directionName">Estación clínica</h2><p id="directionDescription">Una estación de trabajo: navegación lateral estable, registros compactos y metas a la vista.</p></div><a id="openFull" href="station.html" target="_blank" rel="noopener">Abrir a pantalla completa <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></a></div>
+<div class="preview-controls"><div><label for="previewState">Estado inicial</label><select id="previewState"><option value="filled">Con casos</option><option value="empty">Primer uso, sin casos</option></select></div><p>Prueba registrar, buscar, editar y ajustar metas. Todo utiliza datos ficticios.</p></div>
+<div class="preview-grid" id="previewGrid"><section class="preview"><label class="compare-select" hidden>Propuesta izquierda<select id="leftStyle"><option value="station">Estación clínica</option><option value="pulse">Pulso</option><option value="daybook">Cuaderno digital</option><option value="atlas">Atlas académico</option></select></label><iframe id="leftFrame" title="Estación clínica: maqueta interactiva" src="station.html?embedded=1"></iframe></section><section class="preview" id="secondPreview" hidden><label class="compare-select">Propuesta derecha<select id="rightStyle"><option value="station">Estación clínica</option><option value="pulse" selected>Pulso</option><option value="daybook">Cuaderno digital</option><option value="atlas">Atlas académico</option></select></label><iframe id="rightFrame" title="Pulso: maqueta interactiva" src="pulse.html?embedded=1" loading="lazy"></iframe></section></div>
+<details class="reasoning"><summary>Las decisiones de UX detrás de las propuestas</summary><div class="stories"><article><h3>Acabo de terminar una cirugía</h3><p>Registrar caso siempre está en la primera pantalla. El registro pide lo esencial y conserva un borrador durante esta visita; guardar confirma el código del caso y abre la bitácora.</p></article><article><h3>Necesito volver a un caso</h3><p>El procedimiento es el elemento reconocible. Búsqueda por diagnóstico, procedimiento o código; filtro por rol y detalle con edición directa.</p></article><article><h3>Quiero revisar mi exposición</h3><p>Las metas indican que cuentan todos los casos y roles. Tocar un procedimiento abre sus registros; los objetivos son editables.</p></article><article><h3>Es mi primera visita</h3><p>Registrar, recuperar una bitácora y definir metas siguen disponibles en un estado inicial específico. Cuando hay datos, el espacio se dedica al trabajo.</p></article></div></details>
+<footer>Maquetas independientes. La app actual y sus datos permanecen intactos.</footer>
+</main><script src="assets/comparison.js?v=1"></script></body></html>

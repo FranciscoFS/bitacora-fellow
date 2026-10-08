@@ -25,7 +25,7 @@ window.BF = window.BF || {};
       if (activo) t.setAttribute('aria-current', 'page');
       else t.removeAttribute('aria-current');
     });
-    if (view === 'dashboard') BF.dashboard.render();
+    if (view === 'dashboard') { BF.dashboard.render(); BF.home.enter(); }
     if (view === 'bitacora') BF.bitacora.render();
     window.scrollTo({ top: 0, behavior: 'instant' });
     if (location.hash !== '#' + view) history.pushState(null, '', '#' + view);
@@ -187,10 +187,6 @@ window.BF = window.BF || {};
       if (destination === 'contenido') $('#contenido').focus();
       else show(destination);
     });
-
-    if (!S.all().length && !S.isConfigured()) {
-      BF.util.toast('Empieza cargando un caso o configura tu repositorio en Ajustes.', '', 6000);
-    }
 
     // Primera sincronización automática si ya está configurado.
     if (S.isConfigured()) {

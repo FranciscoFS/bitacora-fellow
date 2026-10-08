@@ -14,7 +14,9 @@ BF.CONFIG = {
   procedureDetailsFor(procedures) {
     return {
       injertoLca: procedures.some((p) => /reconstrucción de LCA|tibial alta \+ LCA/i.test(p)),
-      tecnicaMeniscal: procedures.includes('Reparación meniscal (sutura)')
+      tecnicaMeniscal: procedures.includes('Reparación meniscal (sutura)'),
+      osteotomiaTibial: procedures.some((p) => /^Osteotomía tibial alta/i.test(p)),
+      osteotomiaFemoral: procedures.includes('Osteotomía femoral distal (DFO)')
     };
   },
 
@@ -38,6 +40,8 @@ BF.CONFIG = {
     'Otra'
   ],
 
+  OSTEOTOMIA_TIPOS: ['Apertura', 'Cierre'],
+  OSTEOTOMIA_LADOS: ['Medial', 'Lateral'],
   SEXOS: ['Femenino', 'Masculino', 'Otro'],
   LATERALIDADES: ['Derecha', 'Izquierda', 'Bilateral'],
   CLAVIEN: ['', 'I', 'II', 'IIIa', 'IIIb', 'IVa', 'IVb', 'V'],
@@ -72,6 +76,8 @@ BF.CONFIG = {
     'Prótesis total de rodilla (PTR)',
     'Prótesis unicompartimental (PUC)',
     'Prótesis total con navegación/robótica',
+    'Prótesis de revisión',
+    'Prótesis tumoral',
     'Recambio protésico de 1 componente',
     'Recambio protésico de 2 componentes',
     'Artrodesis de rodilla',
@@ -86,7 +92,7 @@ BF.CONFIG = {
     'Implante de condrocitos (ACI/MACI)',
     'Aloinjerto osteocondral',
     'Implante de matriz de colágeno',
-    // Trauma
+    // Fracturas
     'Fractura Fémur Distal',
     'Reducción',
     'Osteosíntesis',
@@ -101,6 +107,8 @@ BF.CONFIG = {
     // Sinovial, infección y otros
     'Sinovectomía (artroscópica/abierta)',
     'Toilette articular por infección',
+    'Aseo quirúrgico',
+    'Cambio de VAC',
     'Recambio de espaciador por IPR',
     'Artrofibrosis: liberación artroscópica',
     'Plicae sinovial / banda de Lannelongue',
@@ -113,6 +121,8 @@ BF.CONFIG = {
     'Infiltración / procedimiento menor',
     'Otro (especificar en notas)'
   ],
+
+  PROCEDIMIENTOS_SOLO_ADICIONALES: ['Cambio de VAC'],
 
   /* Campos del control evolutivo (se repiten en cada fila del repeater) */
   FOLLOWUP_FIELDS: [
@@ -135,6 +145,9 @@ BF.CONFIG = {
   }
 };
 
+/* Catálogo principal; los adicionales siguen disponibles para asociar y contar. */
+BF.CONFIG.PROCEDIMIENTOS_PRINCIPALES = BF.CONFIG.PROCEDIMIENTOS.filter((p) => !BF.CONFIG.PROCEDIMIENTOS_SOLO_ADICIONALES.includes(p));
+
 /* Roles en los que el fellow actúa como cirujano */
 BF.CONFIG.ROLES_CIRUJANO = ['Cirujano (supervisado)', 'Cirujano (independiente)'];
 
@@ -155,7 +168,7 @@ BF.CONFIG.procedureArea = (name) => {
     ['Artroscopia diagnóstica', 'Menisco'], ['Reconstrucción de LCA', 'Ligamentos'],
     ['Estabilización de rótula (MPFL)', 'Patelofemoral'], ['Prótesis total de rodilla (PTR)', 'Artroplastia'],
     ['Osteotomía tibial alta (HTO)', 'Osteotomías'], ['Condroplastia / regularización', 'Cartílago'],
-    ['Fractura Fémur Distal', 'Trauma'], ['Sinovectomía (artroscópica/abierta)', 'Otros']
+    ['Fractura Fémur Distal', 'Fracturas'], ['Sinovectomía (artroscópica/abierta)', 'Otros']
   ];
   return boundaries.reverse().find(([first]) => index >= BF.CONFIG.PROCEDIMIENTOS.indexOf(first))[1];
 };

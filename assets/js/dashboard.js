@@ -10,26 +10,6 @@ window.BF = window.BF || {};
 
   const num1 = (v, suffix = '') => (v == null ? '—' : `${Math.round(v * 10) / 10}${suffix}`);
 
-  let frequentRange = {};
-  function renderFrequent() {
-    const period = $('#frequentPeriod').value;
-    const today = BF.util.todayISO();
-    let from = '';
-    if (period === 'year') from = today.slice(0, 4) + '-01-01';
-    else if (period !== 'all') {
-      const date = new Date(today + 'T12:00:00');
-      date.setDate(date.getDate() - Number(period) + 1);
-      from = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-    frequentRange = { from, to: period === 'all' ? '' : today };
-    const cases = S.all().filter((caso) => (!from || caso.fecha >= from) && (!frequentRange.to || caso.fecha <= frequentRange.to));
-    const counts = new Map();
-    cases.forEach((caso) => { if (caso.procedimientoPrincipal) counts.set(caso.procedimientoPrincipal, (counts.get(caso.procedimientoPrincipal) || 0) + 1); });
-    const top = [...counts].sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0], 'es')).slice(0, 3);
-    $('#frequentContext').textContent = `${cases.length} casos · Solo procedimiento principal`;
-    $('#frequentCards').innerHTML = top.map(([procedure, count]) => `<button class="frequent-card" type="button" data-frequent-procedure="${esc(procedure)}"><span class="frequent-name">${esc(procedure)}</span><strong>${count} <small>${count === 1 ? 'caso' : 'casos'}</small></strong><span class="muted small">${Math.round(count / cases.length * 100)}% del período</span></button>`).join('') || '<p class="empty">No hay cirugías registradas en este período.</p>';
-  }
-
   /* ───────── Filtros ───────── */
 
   function fillFilterSelects() {
@@ -70,14 +50,14 @@ window.BF = window.BF || {};
     $('#kpis').innerHTML = [
       kpi({ label: 'Casos totales', value: m.total, hint: `${m.delAnio} en ${new Date().getFullYear()}` }),
       kpi({ label: 'Como cirujano', value: m.comoCirujano, hint: `${m.pctCirujano}% del total`, tone: 'accent' }),
-      kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
+      kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
       kpi({
         label: 'Complicaciones intraop.', value: m.complicaciones,
         hint: `${m.tasaComplicaciones}% de los casos`,
         tone: m.total ? (m.complicaciones ? 'bad' : 'good') : ''
       }),
       kpi({ label: 'Duración promedio', value: num1(m.duracionPromedio, ' min'), hint: 'promedio de los tiempos registrados' }),
-      kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
+      kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
       kpi({ label: 'Isquemia promedio', value: num1(m.isquemiaPromedio, ' min'), hint: 'casos con torniquete' }),
       kpi({ label: 'Duración mediana', value: num1(m.duracionMediana, ' min'), hint: 'valor central de los tiempos registrados' })
     ].join('');
@@ -131,11 +111,6 @@ window.BF = window.BF || {};
     // Casos por mes (rellenando meses sin actividad)
     if (m.porMes.length) {
       const keys = monthRange(m.porMes[0].key, m.porMes[m.porMes.length - 1].key);
-      const map = new Map(m.porMes.map((d) => [d.key, d.value]));
-      const serie = keys.map((k) => ({ key: k, label: fmtMonth(k), value: map.get(k) || 0 }));
-      Ch.bars($('#chartPorMes'), serie, { aria: 'casos por mes' });
-      $('#capPorMes').textContent = `${keys.length} mes(es) · pico ${Math.max(...serie.map((d) => d.value))}`;
-
       const cumMap = new Map(m.porMesCirujano.map((d) => [d.key, d.value]));
       let acc = 0;
       const acum = keys.map((k) => {
@@ -144,9 +119,7 @@ window.BF = window.BF || {};
       });
       Ch.line($('#chartCirujano'), acum.length ? acum : [], { aria: 'casos como cirujano acumulados' });
     } else {
-      Ch.empty($('#chartPorMes'), 'Sin casos registrados todavía');
       Ch.empty($('#chartCirujano'), 'Sin casos como cirujano todavía');
-      $('#capPorMes').textContent = '';
     }
 
     Ch.donut($('#chartRol'), m.porRol, { centerLabel: 'casos', aria: 'participación por rol' });
@@ -166,11 +139,17 @@ window.BF = window.BF || {};
     const soloCirujano = S.getGoalMode() === 'cirujano';
     const base = soloCirujano ? S.all().filter(S.isSurgeon) : S.all();
     const filas = S.progreso(base);
+    const cumplidas = filas.filter((f) => f.cumplida).length;
 
     $('#goalMode').checked = soloCirujano;
+    BF.home.renderFocus(filas, soloCirujano);
+
+    $('#goalsSummary').innerHTML = filas.length
+      ? `<b>${cumplidas}</b> / ${filas.length} cumplidas`
+      : 'Sin metas definidas: agrega una abajo para medir tu avance en el fellowship.';
 
     const preferred = BF.util.store.get('featuredGoals', null);
-    const featured = Array.isArray(preferred) ? preferred.filter((proc) => filas.some((goal) => goal.proc === proc)).slice(0, 3) : filas.slice(0, 3).map((goal) => goal.proc);
+    const featured = Array.isArray(preferred) ? [...new Set(preferred)].filter((proc) => filas.some((goal) => goal.proc === proc)).slice(0, 3) : filas.slice(0, 3).map((goal) => goal.proc);
     let picker = $('#featuredGoalsPicker');
     if (!picker) {
       picker = document.createElement('div');
@@ -183,7 +162,7 @@ window.BF = window.BF || {};
         renderProgreso();
       });
     }
-    picker.innerHTML = '<p class="muted small">Elige hasta tres metas para destacar en este dispositivo.</p>' + [0, 1, 2].map((index) => `<label class="field"><span>Meta destacada ${index + 1}</span><select><option value="">Sin selección</option>${filas.map((goal) => `<option value="${esc(goal.proc)}"${featured[index] === goal.proc ? ' selected' : ''}>${esc(goal.proc)}</option>`).join('')}</select></label>`).join('');
+    picker.innerHTML = '<p class="muted small">Elige hasta tres metas para destacar en este dispositivo.</p>' + [0, 1, 2].map((index) => `<label class="field"><span>Meta destacada ${index + 1}</span><select><option value="">Sin selección</option>${filas.map((goal) => `<option value="${esc(goal.proc)}"${featured[index] === goal.proc ? ' selected' : featured.includes(goal.proc) ? ' disabled' : ''}>${esc(goal.proc)}</option>`).join('')}</select></label>`).join('');
 
     if (!editingGoals) {
       $('#progressList').classList.add('goal-circles');
@@ -193,7 +172,7 @@ window.BF = window.BF || {};
 
 
     $('#progressList').innerHTML = (editingGoals ? filas : featured.map((proc) => filas.find((goal) => goal.proc === proc))).map((f) => editingGoals ? `
-      <div class="goal${f.cumplida ? ' cumplida' : ''}">
+      <div class="goal${f.cumplida ? ' cumplida' : ''}" data-goal-proc="${esc(f.proc)}">
         <span class="goal-name" title="${esc(f.members.join(' · '))}">${esc(f.proc)}${f.members.length > 1 ? `<small class="goal-group-label">${f.members.length} procedimientos combinados</small>` : ''}</span>
         <span class="goal-bar"><i style="--pct:${(Math.min(100, f.pct) / 100).toFixed(3)}"></i></span>
         <span class="goal-count">
@@ -204,8 +183,8 @@ window.BF = window.BF || {};
         </span>
         ${editingGoals ? `<button class="icon-btn goal-remove" type="button" data-proc="${esc(f.proc)}"
           title="Quitar meta" aria-label="Quitar meta de ${esc(f.proc)}">×</button>` : ''}
-      </div>` : `<div class="featured-goal"><div class="goal-ring" role="progressbar" aria-label="${esc(f.proc)}" aria-valuemin="0" aria-valuemax="${f.meta}" aria-valuenow="${Math.min(f.meta, f.logrado)}" aria-valuetext="${f.logrado} de ${f.meta} casos"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="42"/><circle class="ring-value" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="${Math.min(100, f.pct)} 100"/></svg><strong>${Math.min(100, f.pct)}%</strong></div><h3>${esc(f.proc)}</h3><p class="muted"><b>${f.logrado}</b> de ${f.meta} casos</p>${f.members.length > 1 ? '<small class="muted">Procedimientos combinados</small>' : ''}</div>`).join('') ||
-      '<p class="empty">Todavía no hay metas. Elige un procedimiento y su objetivo abajo.</p>';
+      </div>` : `<div class="featured-goal${f.cumplida ? ' cumplida' : ''}" data-goal-proc="${esc(f.proc)}"><div class="goal-ring" data-progress="${Math.min(100, f.pct)}" role="progressbar" aria-label="${esc(f.proc)}" aria-valuemin="0" aria-valuemax="${f.meta}" aria-valuenow="${Math.min(f.meta, f.logrado)}" aria-valuetext="${f.logrado} de ${f.meta} casos"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="42"/><circle class="ring-value" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="${Math.min(100, f.pct)} 100"/></svg><strong>${Math.min(100, f.pct)}%</strong></div><div class="featured-goal-copy"><h3>${esc(f.proc)}</h3><p class="muted"><b>${f.logrado}</b> de ${f.meta} casos</p>${f.members.length > 1 ? '<small class="muted">Procedimientos combinados</small>' : ''}</div></div>`).join('') ||
+      (filas.length ? '<p class="empty">Elige hasta tres metas en «Editar metas».</p>' : '<p class="empty">Todavía no hay metas. Agrega una en «Editar metas».</p>');
 
     // Selector: sólo procedimientos que aún no tienen meta.
     const libres = C.PROCEDIMIENTOS.filter((p) => !(p in S.getObjetivos()));
@@ -239,12 +218,26 @@ window.BF = window.BF || {};
 
   /* ───────── Render general ───────── */
 
+  function renderOverview() {
+    const cases = S.sorted(), m = S.metrics(cases);
+    $('.daybook-activity').hidden = !cases.length;
+    $('#personalSummary').hidden = !cases.length;
+    $('#daybookOverview').classList.toggle('is-empty',!cases.length);
+    BF.home.renderSummary(cases, m);
+    if (m.porMes.length) {
+      const keys=monthRange(m.porMes[0].key,m.porMes[m.porMes.length-1].key);
+      const values=new Map(m.porMes.map(d=>[d.key,d.value]));
+      Ch.monthly($('#chartPorMes'),keys.map(key=>({key,label:fmtMonth(key),value:values.get(key)||0})),{aria:'Casos por mes, todo el historial'});
+      $('#capPorMes').textContent='Todo el historial';
+    } else { Ch.empty($('#chartPorMes'),'Sin casos registrados');$('#capPorMes').textContent=''; }
+  }
+
   function render() {
-    renderFrequent();
     const f = getFilters();
     const casos = S.filter(f);
     const m = S.metrics(casos);
     const vacio = S.all().length === 0;
+    renderOverview();
 
     $('#btnClearFilters').hidden = !hasFilters(f) || vacio;
 
@@ -252,6 +245,7 @@ window.BF = window.BF || {};
        comunican nada: se muestran una guía de arranque y la tarjeta de metas
        (que sí sirve antes de cargar el primer caso). */
     $('#gettingStarted').hidden = !vacio;
+    $('.advanced-analysis').hidden = vacio;
     $('#dashboardData').hidden = vacio;
     $('#chartsGrid').hidden = vacio || !casos.length;
     $('#kpis').hidden = !casos.length;
@@ -270,21 +264,25 @@ window.BF = window.BF || {};
   }
 
   function init() {
+    BF.home.init();
+    const layoutButtons = Array.from(document.querySelectorAll('[data-dashboard-layout]'));
+    const setLayout = (value) => {
+      const layout = value === 'single' ? 'single' : 'split';
+      $('#view-dashboard').dataset.layout = layout;
+      layoutButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.dashboardLayout === layout)));
+    };
+    setLayout(BF.util.store.get('dashboardLayout', 'split'));
+    layoutButtons.forEach((button) => button.addEventListener('click', () => {
+      setLayout(button.dataset.dashboardLayout);
+      BF.util.store.set('dashboardLayout', button.dataset.dashboardLayout);
+    }));
     fillFilterSelects();
     $('#filterForm').addEventListener('input', render);
-    $('#frequentPeriod').addEventListener('change', renderFrequent);
-    $('#frequentCards').addEventListener('click', (event) => {
-      const button = event.target.closest('[data-frequent-procedure]');
-      if (!button) return;
-      const procedure = button.dataset.frequentProcedure;
-      BF.bitacora.setFrequentScope({ ...frequentRange, procedure }, `${procedure} · ${$('#frequentPeriod').selectedOptions[0].textContent}`);
-      BF.app.show('bitacora');
-    });
-    $('#clearFrequentScope').addEventListener('click', () => BF.bitacora.setFrequentScope(null));
     $('#filterForm').addEventListener('change', render);
     const clearFilters = () => { $('#filterForm').reset(); render(); };
     $('#btnClearFilters').addEventListener('click', clearFilters);
     $('#btnResetFilters').addEventListener('click', clearFilters);
+    BF.practice.init();
     $('#btnEditGoals').addEventListener('click', () => {
       editingGoals = !editingGoals;
       $('#goalsEditor').hidden = !editingGoals;

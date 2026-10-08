@@ -17,6 +17,7 @@ window.BF = window.BF || {};
     'codigo', 'fecha', 'hora', 'sexo', 'lateralidad', 'institucion', 'diagnostico',
     'antecedentesRodilla', 'comorbilidades', 'cirujano', 'rol', 'procedimientoPrincipal',
     'abordaje', 'anestesia', 'hallazgos', 'implantes', 'profilaxis', 'rehabilitacion', 'injertoLca', 'tecnicaMeniscal', 'patronMultiligamentario', 'clasificacionMultiligamentaria',
+    'osteotomiaTibialTipo', 'osteotomiaTibialLado', 'osteotomiaFemoralTipo', 'osteotomiaFemoralLado',
     'complicacionIntraopDetalle', 'complicacionPostopDetalle', 'complicacionClavienDindo', 'notas'
   ];
   const NUM_FIELDS = ['edad', 'imc', 'duracionMin', 'torniqueteMin', 'internacionDias'];
