@@ -74,10 +74,15 @@ window.BF = window.BF || {};
   const tagKey = (tag) => String(tag).trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
   function caseTags(c) {
     const category = c.procedimientoPrincipal ? C.procedureArea(c.procedimientoPrincipal) : '';
+    const automatic = new Set((c.autoTags || []).map(tagKey));
+    const manual = new Set((c.manualTags || []).map(tagKey));
+    const diagnosticLabels = new Set(C.caseDiagnoses(c).flatMap((d) => [d.tipo, d.nombre, C.diagnosisDescription(d, false),
+      d.clasificacionSchatzker ? `Schatzker ${d.clasificacionSchatzker}` : '', d.clasificacionMultiligamentaria ? `Schenck ${d.clasificacionMultiligamentaria}` : '']).filter(Boolean).map(tagKey));
     const seen = new Set();
     const tags = [category, ...(c.tags || [])].filter((tag) => {
       const key = tagKey(tag);
       if (!key || seen.has(key)) return false;
+      if (automatic.has(key) && diagnosticLabels.has(key) && !manual.has(key)) return false;
       seen.add(key);
       return true;
     });
@@ -99,19 +104,19 @@ window.BF = window.BF || {};
       const complLabel = 'Intraop.';
       const lat = (c.lateralidad || '').charAt(0) || '—';
       return `<tr data-id="${c.id}">
-        <td class="wrap-cell"><button class="procedure-link code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(c.procedimientoPrincipal || 'Sin procedimiento')}</button>
-          ${(c.procedimientosAsociados || []).length ? `<span class="muted small"> +${c.procedimientosAsociados.length}</span>` : ''}${caseTags(c)}</td>
+        <td class="wrap-cell"><button class="procedure-link code-link" type="button" aria-label="Ver el detalle del caso ${esc(c.codigo)}">${esc(C.procedureSummary(c))}</button>
+          <p class="case-diagnosis">${esc(C.caseDiagnoses(c).map((d) => C.diagnosisDescription(d)).join(' + '))}</p>${caseTags(c)}</td>
         <td>${esc(fmtDate(c.fecha))}</td>
         <td><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || '—')}</span></td>
         <td class="case-code">${esc(c.codigo)}</td>
         <td>${esc(c.lateralidad || '—')}</td>
         <td>${esc(c.abordaje || '—').replace('Artroscópico + mini-abierto', 'Artro + mini')}</td>
         <td class="num">${c.duracionMin ?? '—'}</td>
-        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : '<span class="muted">No</span>'}</td>
+        <td>${compl ? `<span class="pill bad">${esc(complLabel)}</span>` : `<span class="muted">${compl === false ? 'No' : '—'}</span>`}</td>
         <td class="col-actions"><button class="icon-btn" data-act="edit" title="Editar" aria-label="Editar">✎</button></td>
       </tr>`;
     }).join('');
-    $('#mobileCases').innerHTML = rows.map((c) => `<article class="case-item" data-id="${esc(c.id)}"><button type="button" class="case-open" aria-label="Ver el detalle del caso ${esc(c.codigo)}"><strong>${esc(c.procedimientoPrincipal || 'Procedimiento sin registrar')}</strong><span class="case-meta">${esc(fmtDate(c.fecha))} · ${esc(c.lateralidad || 'Sin lateralidad')} · ${esc(c.codigo)}</span></button>${caseTags(c)}<div class="case-bottom"><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || 'Sin rol')}</span><button class="icon-btn" type="button" data-act="edit" aria-label="Editar ${esc(c.codigo)}">✎</button></div>${S.hasComplication(c) ? '<p class="small case-warning">Complicación registrada</p>' : ''}</article>`).join('');
+    $('#mobileCases').innerHTML = rows.map((c) => `<article class="case-item" data-id="${esc(c.id)}"><button type="button" class="case-open" aria-label="Ver el detalle del caso ${esc(c.codigo)}"><strong>${esc(C.procedureSummary(c))}</strong><span class="case-meta">${esc(fmtDate(c.fecha))} · ${esc(c.lateralidad || 'Sin lateralidad')} · ${esc(c.codigo)}</span></button><p class="case-diagnosis">${esc(C.caseDiagnoses(c).map((d) => C.diagnosisDescription(d)).join(' + '))}</p>${caseTags(c)}<div class="case-bottom"><span class="pill ${S.isSurgeon(c) ? 'accent' : ''}">${esc(c.rol || 'Sin rol')}</span><button class="icon-btn" type="button" data-act="edit" aria-label="Editar ${esc(c.codigo)}">✎</button></div>${S.hasComplication(c) ? '<p class="small case-warning">Complicación registrada</p>' : ''}</article>`).join('');
 
     const total = S.all().length;
     $('#tableCount').textContent = total === 0
@@ -148,9 +153,8 @@ window.BF = window.BF || {};
       ${row('Institución', c.institucion)}
 
       ${section('Preoperatorio')}
-      ${row('Diagnóstico', c.diagnostico)}
-      ${row('Patrón multiligamentario', c.patronMultiligamentario)}
-      ${row('Clasificación de Schenck', c.clasificacionMultiligamentaria)}
+      ${row('Diagnósticos', C.caseDiagnoses(c).map((d) => C.diagnosisDescription(d)).join(' + '))}
+      ${row('Categorías de diagnóstico', [...new Set(C.caseDiagnoses(c).map((d) => d.grupo).filter(Boolean))].join(' · '))}
       ${row('Antecedentes de rodilla', c.antecedentesRodilla)}
       ${row('Comorbilidades', c.comorbilidades)}
 
@@ -175,8 +179,8 @@ window.BF = window.BF || {};
 
       ${section('Tiempos y técnica')}
       ${row('Duración', c.duracionMin != null ? `${c.duracionMin} min` : '')}
-      ${row('Isquemia', c.torniquete ? `Sí${c.torniqueteMin != null ? ` · ${c.torniqueteMin} min` : ''}` : 'No')}
-      ${row('Complicación intraoperatoria', c.complicacionIntraop ? `Sí — ${c.complicacionIntraopDetalle || 'sin detalle'}` : 'No')}
+      ${row('Isquemia', c.torniquete === true ? `Sí${c.torniqueteMin != null ? ` · ${c.torniqueteMin} min` : ''}` : c.torniquete === false ? 'No' : '—')}
+      ${row('Complicación intraoperatoria', c.complicacionIntraop === true ? `Sí — ${c.complicacionIntraopDetalle || 'sin detalle'}` : c.complicacionIntraop === false ? 'No' : '—')}
 
       ${section('Notas')}
       ${caseTags(c) ? `<dt>Etiquetas</dt><dd>${caseTags(c)}</dd>` : ''}

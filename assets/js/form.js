@@ -17,25 +17,71 @@ window.BF = window.BF || {};
   const fields = () => Array.from(form.elements).filter((f) => f.name && !f.name.startsWith('fup_'));
   const areas = ['Todas', 'Menisco', 'Ligamentos', 'Patelofemoral', 'Artroplastia', 'Osteotomías', 'Cartílago', 'Fracturas', 'Otros'];
   let principalArea = 'Todas', associatedArea = 'Todas', principalExpanded = true;
+  let diagnosisArea = '';
+  let diagnosisExpanded = true;
+  let selectedDiagnoses = [];
   const areaOf = C.procedureArea;
   const optionMarkup = (p, selected, attr) => `<button class="catalog-option${selected ? ' is-selected' : ''}" type="button" ${attr}="${esc(p)}" aria-pressed="${selected}"><span><small>${esc(areaOf(p))}</small><strong>${esc(p)}</strong></span><span class="option-action" aria-hidden="true">${selected ? '✓' : '+'}</span></button>`;
   function renderCategories(id, current) {
     $(id).innerHTML = areas.map((a) => `<button type="button" data-area="${esc(a)}" aria-pressed="${a === current}">${esc(a === 'Todas' && id === '#principalCategories' ? 'Frecuentes' : a)}</button>`).join('');
   }
   function renderDiagnosis() {
-    const query = normalizedQuery(form.elements.diagnostico.value.trim());
-    const previous = [...new Set(S.all().map((c) => c.diagnostico).filter(Boolean))];
-    const matches = query ? previous.filter((d) => normalizedQuery(d).includes(query) && normalizedQuery(d) !== query).slice(0, 4) : [];
+    const query = normalizedQuery($('#diagnosisSearch').value.trim());
+    $('#diagnosisPicker').hidden = !diagnosisExpanded && selectedDiagnoses.length > 0;
+    $('#btnAddDiagnosis').hidden = diagnosisExpanded || !selectedDiagnoses.length;
+    $('#btnCancelDiagnosis').hidden = !diagnosisExpanded || !selectedDiagnoses.length;
+    $('#btnAddCustomDiagnosis').disabled = !query;
+    $('#diagnosisCategories').innerHTML = ['', ...Object.keys(C.DIAGNOSTICOS)].map((group) => `<button type="button" data-diagnosis-area="${esc(group)}" aria-pressed="${group === diagnosisArea}">${esc(group || 'Frecuentes')}</button>`).join('');
+    const catalog = Object.entries(C.DIAGNOSTICOS).flatMap(([group, names]) => names.map((name) => ({ group, name })));
+    const options = diagnosisArea ? catalog.filter((entry) => entry.group === diagnosisArea) : query ? catalog.filter((entry) => normalizedQuery(entry.name).includes(query)).slice(0, 6) : [];
+    $('#diagnosisCatalog').hidden = !diagnosisExpanded || !options.length;
+    $('#diagnosisCatalog').innerHTML = options.map(({ group, name }) => `<button type="button" data-diagnosis="${esc(name)}" data-diagnosis-group="${esc(group)}" aria-pressed="${selectedDiagnoses.some((d) => d.nombre === name)}"><span>${esc(name)}</span>${diagnosisArea ? '' : `<small>${esc(group)}</small>`}</button>`).join('');
+    const counts = new Map();
+    S.all().forEach((c) => C.caseDiagnoses(c).forEach((d) => counts.set(d.nombre, (counts.get(d.nombre) || 0) + 1)));
+    const previous = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')).map(([name]) => name);
+    const matches = diagnosisArea ? [] : previous.filter((d) => (!query || normalizedQuery(d).includes(query)) && normalizedQuery(d) !== query && !options.some((entry) => entry.name === d)).slice(0, 4);
     $('#diagnosisOptions').hidden = !matches.length;
     $('#diagnosisOptions').innerHTML = matches.map((d) => `<button type="button" data-diagnosis="${esc(d)}"><span>${esc(d)}</span><span aria-hidden="true">↗</span></button>`).join('');
   }
 
+  function selectDiagnosis(value, preferredGroup = '') {
+    const nombre = String(value || '').trim();
+    if (!nombre) return;
+    const entry = C.diagnosisEntry(nombre, preferredGroup);
+    if (!selectedDiagnoses.some((d) => normalizedQuery(d.nombre) === normalizedQuery(nombre))) {
+      selectedDiagnoses.push(...C.caseDiagnoses({ diagnosticos: [{ id: BF.util.uuid(), nombre, grupo: entry?.diagnosticoGrupo, tipo: entry?.diagnosticoTipo }] }));
+    }
+    // Agregar un diagnóstico nunca copia la clasificación de otro caso.
+    $('#diagnosisSearch').value = '';
+    diagnosisArea = '';
+    diagnosisExpanded = false;
+    renderDiagnosisList(); renderDiagnosis(); changed(); $('#btnAddDiagnosis').focus();
+  }
+
+  function syncDiagnosisValue() {
+    form.elements.diagnostico.value = C.withDiagnoses({ diagnosticos: selectedDiagnoses }).diagnostico;
+  }
+
+  function renderDiagnosisList() {
+    syncDiagnosisValue();
+    $('#diagnosisList').innerHTML = selectedDiagnoses.map((d) => {
+      const options = (field, values, label) => `<div class="dx-field"><span>${esc(label)}</span><div class="quick-options dx-options" role="group" aria-label="${esc(label + ' · ' + d.nombre)}">${values.map(([value, text]) => `<button type="button" data-dx-id="${esc(d.id)}" data-dx-choice="${field}" data-value="${esc(value)}" aria-pressed="${String(d[field] ?? '') === value}">${esc(text)}</button>`).join('')}</div></div>`;
+      const choices = (field, values, label) => options(field, values.map((v) => [v, v]), label);
+      return `<article class="diagnosis-item" data-diagnosis-id="${esc(d.id)}"><div class="diagnosis-item-heading"><strong>${esc(d.nombre)}</strong><button type="button" class="icon-btn" data-remove-diagnosis="${esc(d.id)}" aria-label="Quitar diagnóstico ${esc(d.nombre)}">×</button></div>
+        ${C.isMeniscalDiagnosis(d.nombre) ? choices('patronMeniscal', C.PATRONES_MENISCALES, 'Patrón meniscal') : ''}
+        ${C.isChondralDiagnosis(d.nombre) ? options('condralReinsertable', [['true', 'Sí'], ['false', 'No']], '¿Reinsertable?') : ''}
+        ${C.isTibialPlateauDiagnosis(d.nombre + ' ' + d.detalle) ? choices('clasificacionSchatzker', C.SCHATZKER, 'Schatzker') : ''}
+        ${C.isMultiligamentaryDiagnosis(d.nombre + ' ' + d.detalle) ? choices('clasificacionMultiligamentaria', C.SCHENCK, 'Schenck') + `<label class="field"><span>Patrón de lesión</span><input data-dx-input="patronMultiligamentario" data-dx-id="${esc(d.id)}" value="${esc(d.patronMultiligamentario)}" placeholder="Opcional" aria-label="Patrón de lesión · ${esc(d.nombre)}"></label>` : ''}
+        <details class="diagnosis-extra"${d.detalle ? ' open' : ''}><summary>Detalles</summary><label class="field"><span class="sr-only">Detalles de ${esc(d.nombre)}</span><input data-dx-input="detalle" data-dx-id="${esc(d.id)}" value="${esc(d.detalle)}" placeholder="Detalles opcionales"></label></details></article>`;
+    }).join('');
+  }
+
   function initChoices() {
-    const labels = { Derecha: 'D', Izquierda: 'Izq' };
-    for (const [name, values] of [['lateralidad', C.LATERALIDADES], ['rol', C.ROLES], ['abordaje', C.ABORDAJES], ['osteotomiaTibialTipo', C.OSTEOTOMIA_TIPOS], ['osteotomiaTibialLado', C.OSTEOTOMIA_LADOS], ['osteotomiaFemoralTipo', C.OSTEOTOMIA_TIPOS], ['osteotomiaFemoralLado', C.OSTEOTOMIA_LADOS]]) {
+    const labels = { Derecha: 'D', Izquierda: 'Izq', true: 'Sí', false: 'No' };
+    for (const [name, values] of [['lateralidad', C.LATERALIDADES], ['rol', C.ROLES], ['abordaje', C.ABORDAJES], ['osteotomiaTibialTipo', C.OSTEOTOMIA_TIPOS], ['osteotomiaTibialLado', C.OSTEOTOMIA_LADOS], ['osteotomiaFemoralTipo', C.OSTEOTOMIA_TIPOS], ['osteotomiaFemoralLado', C.OSTEOTOMIA_LADOS], ['torniquete', ['true', 'false']], ['complicacionIntraop', ['true', 'false']]]) {
       fillSelect(form.elements[name], values, '');
       const group = form.querySelector('[data-choice="' + name + '"]');
-      group.innerHTML = values.map((value) => `<button type="button" data-choice-value="${esc(value)}" aria-pressed="false" aria-label="${esc(value)}">${esc(labels[value] || value)}</button>`).join('');
+      group.innerHTML = values.map((value) => `<button type="button" data-choice-value="${esc(value)}" aria-pressed="false" aria-label="${esc(['true', 'false'].includes(value) ? labels[value] : value)}">${esc(labels[value] || value)}</button>`).join('');
       group.addEventListener('click', (e) => {
         const button = e.target.closest('[data-choice-value]'); if (!button) return;
         const field = form.elements[name];
@@ -57,7 +103,9 @@ window.BF = window.BF || {};
   }
 
   function focusField(field) {
-    if (field.name === 'procedimientoPrincipal') {
+    if (field.name === 'diagnostico') {
+      diagnosisExpanded = true; renderDiagnosis(); $('#diagnosisSearch').focus();
+    } else if (field.name === 'procedimientoPrincipal') {
       principalExpanded = true;
       $('#principalCatalog').hidden = false;
       $('#principalSearch').focus();
@@ -84,7 +132,7 @@ window.BF = window.BF || {};
   function renderPrincipal() {
     const query = normalizedQuery($('#principalSearch').value.trim());
     const current = form.elements.procedimientoPrincipal.value;
-    const matches = !query && principalArea === 'Todas' ? frequentProcedures() : C.PROCEDIMIENTOS_PRINCIPALES.filter((p) => normalizedQuery(p).includes(query) && (principalArea === 'Todas' || areaOf(p) === principalArea));
+    const matches = !query && principalArea === 'Todas' ? frequentProcedures() : C.PROCEDIMIENTOS_PRINCIPALES.filter((p) => C.procedureMatches(p, query) && (principalArea === 'Todas' || areaOf(p) === principalArea));
     // Keep the complete catalog in the form control, independently of visible results.
     const options = current && !C.PROCEDIMIENTOS_PRINCIPALES.includes(current) ? [current, ...C.PROCEDIMIENTOS_PRINCIPALES] : C.PROCEDIMIENTOS_PRINCIPALES;
     fillSelect(form.elements.procedimientoPrincipal, options, 'Elegir procedimiento');
@@ -108,7 +156,7 @@ window.BF = window.BF || {};
     selectedProc.delete(principal);
     $('#procChips').innerHTML = Array.from(selectedProc).map((p) => `<button type="button" class="chip on" data-proc="${esc(p)}" aria-pressed="true" aria-label="Quitar ${esc(p)}">${esc(p)} <span aria-hidden="true">×</span></button>`).join('');
     const query = normalizedQuery($('#associatedSearch').value);
-    const options = C.PROCEDIMIENTOS.filter((p) => p !== principal && !selectedProc.has(p) && normalizedQuery(p).includes(query) && (associatedArea === 'Todas' || areaOf(p) === associatedArea));
+    const options = C.PROCEDIMIENTOS.filter((p) => p !== principal && !selectedProc.has(p) && C.procedureMatches(p, query) && (associatedArea === 'Todas' || areaOf(p) === associatedArea));
     renderCategories('#associatedCategories', associatedArea);
     $('#procOptions').innerHTML = options.length ? (query || associatedArea !== 'Todas' ? options : options.slice(0, 4)).map((p) => optionMarkup(p, false, 'data-proc')).join('') : '<p class="picker-empty">Sin coincidencias disponibles. Cambia el área o la búsqueda.</p>';
     $('#procChips').hidden = !selectedProc.size;
@@ -123,13 +171,16 @@ window.BF = window.BF || {};
     caso.pasosRealizados = [...personalSteps];
     caso.autoTags = [];
     caso.excludedAutoTags = [...excludedAutoTags];
+    caso.diagnosticos = selectedDiagnoses.map((d) => ({ ...d }));
+    Object.assign(caso, C.withDiagnoses(caso));
+    for (const key of ['torniquete', 'complicacionIntraop']) caso[key] = C.optionalBoolean(caso[key]);
     return C.withAutoTags(caso);
   }
 
   function fingerprint() {
     const c = capture();
     delete c.codigo;
-    return JSON.stringify(c);
+    return JSON.stringify({ caso: c, diagnosisQuery: $('#diagnosisSearch').value });
   }
 
   function read() {
@@ -143,7 +194,6 @@ window.BF = window.BF || {};
         c['osteotomia' + family + 'Lado'] = '';
       }
     }
-    if (!C.isMultiligamentaryDiagnosis(c.diagnostico)) { c.patronMultiligamentario = ''; c.clasificacionMultiligamentaria = ''; }
     if (!c.torniquete) c.torniqueteMin = null;
     if (!c.complicacionIntraop) c.complicacionIntraopDetalle = '';
     return C.withAutoTags(c);
@@ -162,10 +212,8 @@ window.BF = window.BF || {};
   }
 
   function conditionals() {
+    syncDiagnosisValue();
     renderTraumaContext();
-    const multiligamentary = C.isMultiligamentaryDiagnosis(form.elements.diagnostico.value);
-    $('#multiligamentaryDetails').hidden = !multiligamentary;
-    for (const key of ['patronMultiligamentario', 'clasificacionMultiligamentaria']) form.elements[key].disabled = !multiligamentary;
     const applicable = C.procedureDetailsFor([form.elements.procedimientoPrincipal.value, ...selectedProc]);
     $('#procedureSpecific').hidden = !Object.values(applicable).some(Boolean);
     for (const [field, key] of [['#graftField', 'injertoLca'], ['#meniscalTechniqueField', 'tecnicaMeniscal']]) {
@@ -178,7 +226,8 @@ window.BF = window.BF || {};
       for (const suffix of ['Tipo', 'Lado']) form.elements['osteotomia' + family + suffix].disabled = !visible;
     }
     $$('[data-conditional]', form).forEach((container) => {
-      const visible = form.elements[container.dataset.conditional].checked;
+      const field = form.elements[container.dataset.conditional];
+      const visible = field.type === 'checkbox' ? field.checked : field.value === 'true';
       container.hidden = !visible;
       $$('input,select,textarea', container).forEach((f) => { f.disabled = !visible; });
     });
@@ -202,12 +251,13 @@ window.BF = window.BF || {};
   function persistDraft() {
     dirty = fingerprint() !== baseline;
     if (!dirty) { store.del('draft'); $('#draftStatus').textContent = ''; return; }
-    const saved = store.set('draft', { caso: capture(), editingId, baseline, updated: new Date().toISOString() });
+    const saved = store.set('draft', { caso: capture(), diagnosisQuery: $('#diagnosisSearch').value, editingId, baseline, updated: new Date().toISOString() });
     $('#draftStatus').textContent = saved ? 'Borrador guardado' : 'Borrador en memoria. Exporta los datos antes de cerrar esta pestaña.';
   }
 
   function clearInvalid() {
     $('#principalSearch').removeAttribute('aria-describedby');
+    $('#diagnosisSearch').removeAttribute('aria-describedby');
     $$('.field-error', form).forEach((e) => e.remove());
     $$('[aria-invalid]', form).forEach((f) => { f.removeAttribute('aria-invalid'); f.removeAttribute('aria-describedby'); f.classList.remove('is-invalid'); });
     $$('.has-error', form).forEach((s) => s.classList.remove('has-error'));
@@ -219,6 +269,7 @@ window.BF = window.BF || {};
     $$('input[aria-invalid],select[aria-invalid],textarea[aria-invalid]', form).forEach((f) => {
       if (f.checkValidity()) {
         if (f.name === 'procedimientoPrincipal') $('#principalSearch').removeAttribute('aria-describedby');
+        if (f.name === 'diagnostico') $('#diagnosisSearch').removeAttribute('aria-describedby');
         const error = document.getElementById(f.getAttribute('aria-describedby'));
         if (error) error.remove();
         f.removeAttribute('aria-invalid'); f.removeAttribute('aria-describedby'); f.classList.remove('is-invalid');
@@ -238,6 +289,11 @@ window.BF = window.BF || {};
     }
     const auto = new Set((caso.autoTags || []).map((t) => t.toLocaleLowerCase()));
     form.elements.tags.value = (Array.isArray(caso.manualTags) ? caso.manualTags : (caso.tags || []).filter((t) => !auto.has(t.toLocaleLowerCase()))).join(', ');
+    selectedDiagnoses = C.caseDiagnoses(caso);
+    $('#diagnosisSearch').value = '';
+    diagnosisArea = '';
+    diagnosisExpanded = !selectedDiagnoses.length;
+    renderDiagnosisList();
     principalArea = associatedArea = 'Todas'; principalExpanded = !caso.procedimientoPrincipal; renderDiagnosis(); syncChoices();
     $('#principalSearch').value = ''; $('#associatedSearch').value = '';
     if (caso.procedimientoPrincipal && !Array.from(form.elements.procedimientoPrincipal.options).some((o) => o.value === caso.procedimientoPrincipal)) {
@@ -263,6 +319,9 @@ window.BF = window.BF || {};
     excludedAutoTags.clear();
     personalSteps.clear();
     principalArea = associatedArea = 'Todas'; principalExpanded = true;
+    diagnosisArea = '';
+    diagnosisExpanded = true;
+    selectedDiagnoses = []; $('#diagnosisSearch').value = ''; renderDiagnosisList();
     fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo();
     form.elements.fecha.value = keepDate ? fecha : todayISO();
@@ -306,6 +365,7 @@ window.BF = window.BF || {};
         const message = f.validity.valueMissing ? 'Completa este campo obligatorio.' : f.validity.rangeUnderflow || f.validity.rangeOverflow ? `Ingresa un valor entre ${f.min} y ${f.max}.` : 'Revisa el formato o el valor ingresado.';
         f.classList.add('is-invalid'); f.setAttribute('aria-invalid', 'true'); f.setAttribute('aria-describedby', id);
         if (f.name === 'procedimientoPrincipal') $('#principalSearch').setAttribute('aria-describedby', id);
+        if (f.name === 'diagnostico') $('#diagnosisSearch').setAttribute('aria-describedby', id);
         f.parentElement.append(el('span', { id, class: 'field-error', text: message }));
       });
       syncChoices(); focusField(invalid[0]);
@@ -317,6 +377,7 @@ window.BF = window.BF || {};
   }
 
   function save({ andNew = false } = {}) {
+    if ($('#diagnosisSearch').value.trim()) selectDiagnosis($('#diagnosisSearch').value);
     if (!validate()) return false;
     const wasEditing = !!editingId, saved = wasEditing ? S.update(editingId, read()) : S.add(read());
     if (!saved) { $('#formMsg').textContent = 'No se encontró el caso. Conserva tu borrador.'; return false; }
@@ -337,7 +398,7 @@ window.BF = window.BF || {};
     fillSelect(form.elements.anestesia, C.ANESTESIAS, ''); fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
     const draft = store.get('draft'); resetForm(); refreshDatalist();
     if (draft && draft.caso) {
-      write(draft.caso); editingId = S.get(draft.editingId) ? draft.editingId : null;
+      write(draft.caso); $('#diagnosisSearch').value = draft.diagnosisQuery || ''; if (draft.diagnosisQuery) { diagnosisExpanded = true; renderDiagnosis(); } editingId = S.get(draft.editingId) ? draft.editingId : null;
       if (!editingId) { form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo(); }
       baseline = draft.baseline || baseline; dirty = true; setMeta();
       store.set('draft', { ...draft, editingId, caso: capture() });
@@ -377,8 +438,42 @@ window.BF = window.BF || {};
     });
     $('#principalCategories').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (b) { principalArea = b.dataset.area; renderPrincipal(); $('#principalCategories [aria-pressed="true"]').focus(); } });
     $('#associatedCategories').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (b) { associatedArea = b.dataset.area; renderChips(); $('#associatedCategories [aria-pressed="true"]').focus(); } });
-    $('#diagnosisSearch').addEventListener('input', renderDiagnosis);
-    $('#diagnosisOptions').addEventListener('click', (e) => { const b = e.target.closest('[data-diagnosis]'); if (b) { form.elements.diagnostico.value = b.dataset.diagnosis; renderDiagnosis(); changed(); form.elements.diagnostico.focus(); } });
+    $('#diagnosisSearch').addEventListener('input', () => { diagnosisArea = ''; diagnosisExpanded = true; renderDiagnosis(); });
+    $('#diagnosisSearch').addEventListener('input', changed);
+    $('#diagnosisSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); selectDiagnosis(e.target.value); } });
+    $('#btnAddCustomDiagnosis').addEventListener('click', () => selectDiagnosis($('#diagnosisSearch').value));
+    $('#btnAddDiagnosis').addEventListener('click', () => { diagnosisExpanded = true; renderDiagnosis(); $('#diagnosisSearch').focus(); });
+    $('#btnCancelDiagnosis').addEventListener('click', () => { diagnosisExpanded = false; $('#diagnosisSearch').value = ''; renderDiagnosis(); changed(); $('#btnAddDiagnosis').focus(); });
+    $('#diagnosisList').addEventListener('click', (e) => {
+      const remove = e.target.closest('[data-remove-diagnosis]');
+      if (remove) {
+        selectedDiagnoses = selectedDiagnoses.filter((d) => d.id !== remove.dataset.removeDiagnosis);
+        diagnosisExpanded = !selectedDiagnoses.length; renderDiagnosisList(); renderDiagnosis(); changed();
+        (selectedDiagnoses.length ? $('#btnAddDiagnosis') : $('#diagnosisSearch')).focus(); return;
+      }
+      const button = e.target.closest('[data-dx-choice]'); if (!button) return;
+      const d = selectedDiagnoses.find((item) => item.id === button.dataset.dxId); if (!d) return;
+      const field = button.dataset.dxChoice, value = button.dataset.value;
+      d[field] = String(d[field] ?? '') === value ? field === 'condralReinsertable' ? null : '' : field === 'condralReinsertable' ? C.optionalBoolean(value) : value;
+      renderDiagnosisList(); changed();
+      const replacement = Array.from($('#diagnosisList').querySelectorAll('[data-dx-choice]')).find((b) => b.dataset.dxId === d.id && b.dataset.dxChoice === field && b.dataset.value === value);
+      replacement?.focus();
+    });
+    $('#diagnosisList').addEventListener('input', (e) => {
+      const field = e.target.dataset.dxInput; if (!field) return;
+      const d = selectedDiagnoses.find((item) => item.id === e.target.dataset.dxId); if (!d) return;
+      d[field] = e.target.value; changed();
+    });
+    $('#diagnosisCategories').addEventListener('click', (e) => {
+      const button = e.target.closest('[data-diagnosis-area]'); if (!button) return;
+      diagnosisArea = button.dataset.diagnosisArea;
+      diagnosisExpanded = true;
+      renderDiagnosis(); $('#diagnosisCategories [aria-pressed="true"]').focus();
+    });
+    for (const id of ['#diagnosisOptions', '#diagnosisCatalog']) $(id).addEventListener('click', (e) => {
+      const button = e.target.closest('[data-diagnosis]');
+      if (button) selectDiagnosis(button.dataset.diagnosis, button.dataset.diagnosisGroup);
+    });
     $('#associatedSearch').addEventListener('input', renderChips);
     const toggleProc = (e) => {
       const b = e.target.closest('[data-proc]'); if (!b) return;
@@ -413,7 +508,7 @@ window.BF = window.BF || {};
   async function restoreDraft(draft) {
     if (!draft || !draft.caso || !await allowDiscard()) return false;
     fillSelect(form.elements.procedimientoPrincipal, C.PROCEDIMIENTOS_PRINCIPALES, 'Elegir procedimiento');
-    write(draft.caso); editingId = S.get(draft.editingId) ? draft.editingId : null;
+    write(draft.caso); $('#diagnosisSearch').value = draft.diagnosisQuery || ''; if (draft.diagnosisQuery) { diagnosisExpanded = true; renderDiagnosis(); } editingId = S.get(draft.editingId) ? draft.editingId : null;
     if (!editingId) { form.elements.id.value = ''; form.elements.codigo.value = S.nextCodigo(); }
     baseline = draft.baseline || ''; dirty = true; setMeta(); persistDraft();
     BF.app.show('nuevo'); $('#draftStatus').textContent = 'Borrador recuperado del respaldo. Revísalo antes de guardar.';

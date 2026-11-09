@@ -3,13 +3,13 @@ window.BF = window.BF || {};
 
 BF.CONFIG = {
   APP_NAME: 'Bitácora Fellow · Rodilla',
-  DATA_VERSION: 1,
+  DATA_VERSION: 2,
   DEFAULT_BRANCH: 'main',
   DEFAULT_PATH: 'data/bitacora.json',
   LS_PREFIX: 'bf.',
   AUTO_PUSH_DEBOUNCE: 1500,
   isMultiligamentaryDiagnosis(diagnosis) {
-    return /multiligament/i.test(String(diagnosis || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    return /multiligament|luxacion de (?:la )?rodilla/i.test(String(diagnosis || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
   },
   procedureDetailsFor(procedures) {
     return {
@@ -42,6 +42,20 @@ BF.CONFIG = {
 
   OSTEOTOMIA_TIPOS: ['Apertura', 'Cierre'],
   OSTEOTOMIA_LADOS: ['Medial', 'Lateral'],
+  SCHATZKER: ['I', 'II', 'III', 'IV', 'V', 'VI'],
+  SCHENCK: ['KD I', 'KD II', 'KD III-M', 'KD III-L', 'KD IV', 'KD V'],
+  PATRONES_MENISCALES: ['Radial', 'Longitudinal', 'Horizontal', 'Asa de balde', 'Compleja', 'Otra'],
+  DIAGNOSTICOS: {
+    'Fracturas': ['Fractura de platillo tibial', 'Fractura de fémur distal', 'Fractura de rótula', 'Fractura de espinas tibiales', 'Fractura periprotésica', 'Otra fractura de rodilla'],
+    'Menisco': ['Menisco lateral discoide', 'Déficit meniscal posmeniscectomía', 'Lesión de menisco medial', 'Lesión de menisco lateral', 'Lesión de raíz meniscal', 'Lesión de rampa meniscal', 'Quiste parameniscal'],
+    'Ligamentos': ['Falla de plastia de LCA', 'Lesión de LCA', 'Lesión de LCP', 'Lesión de LCM', 'Lesión de LCL', 'Lesión de esquina posteromedial', 'Lesión de esquina posterolateral', 'Lesión multiligamentaria', 'Luxación de rodilla'],
+    'Patelofemoral': ['Inestabilidad patelofemoral', 'Luxación de rótula', 'Lesión del ligamento patelofemoral medial', 'Displasia troclear'],
+    'Revisión protésica': ['Infección periprotésica', 'Aflojamiento aséptico de prótesis', 'Inestabilidad protésica', 'Desgaste de polietileno', 'Osteólisis periprotésica', 'Rigidez tras artroplastia', 'Otro motivo de revisión protésica'],
+    'Artrosis': ['Gonartrosis', 'Artrosis femorotibial medial', 'Artrosis femorotibial lateral', 'Artrosis patelofemoral'],
+    'Cartílago': ['Lesión condral', 'Lesión osteocondral', 'Osteocondritis disecante'],
+    'Infección': ['Artritis séptica de rodilla', 'Infección periprotésica', 'Infección de sitio quirúrgico'],
+    'Otros': ['Lesión de cíclope', 'Artrofibrosis', 'Cuerpo libre intraarticular', 'Sinovitis', 'Rotura de tendón rotuliano', 'Rotura de tendón cuadricipital']
+  },
   SEXOS: ['Femenino', 'Masculino', 'Otro'],
   LATERALIDADES: ['Derecha', 'Izquierda', 'Bilateral'],
   CLAVIEN: ['', 'I', 'II', 'IIIa', 'IIIb', 'IVa', 'IVb', 'V'],
@@ -50,6 +64,8 @@ BF.CONFIG = {
   PROCEDIMIENTOS: [
     // Artroscopia y meniscos
     'Artroscopia diagnóstica',
+    'Meniscoplastia / tallado meniscal (saucerización)',
+    'Reinserción de raíz meniscal',
     'Meniscectomía parcial',
     'Meniscectomía subtotal/total',
     'Reparación meniscal (sutura)',
@@ -59,15 +75,17 @@ BF.CONFIG = {
     // Ligamentos
     'Reconstrucción de LCA',
     'Revisión de reconstrucción de LCA',
+    'Injerto óseo de túneles',
     'Reconstrucción de LCP',
     'Reconstrucción multiligamentaria',
     'Reparación / reconstrucción de LCM',
     'Reconstrucción de LCL',
-    'Reconstrucción de esquina posterolateral',
+    'Reconstrucción de esquina posterolateral (EPL)',
+    'Reconstrucción de esquina posteromedial (EPM)',
     'Luxación de rodilla: reducción y estabilización',
     'Tenodesis extraarticular lateral (LET)',
     // Rótula / patelofemoral
-    'Estabilización de rótula (MPFL)',
+    'Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)',
     'Trocleoplastia',
     'Osteotomía de tuberosidad tibial (Fulkerson / Elmslie)',
     'Luxación patelar: liberación lateral',
@@ -80,6 +98,9 @@ BF.CONFIG = {
     'Prótesis tumoral',
     'Recambio protésico de 1 componente',
     'Recambio protésico de 2 componentes',
+    'Desbridamiento y retención de implantes (DAIR)',
+    'Retiro de prótesis y colocación de espaciador',
+    'Reimplantación protésica',
     'Artrodesis de rodilla',
     // Osteotomías
     'Osteotomía tibial alta (HTO)',
@@ -87,6 +108,9 @@ BF.CONFIG = {
     'Osteotomía tibial alta + LCA',
     // Cartílago
     'Condroplastia / regularización',
+    'Reinserción condral',
+    'Fijación de fragmento osteocondral',
+    'Perforaciones por osteocondritis disecante',
     'Microfracturas',
     'Mosaicoplastia / OATS',
     'Implante de condrocitos (ACI/MACI)',
@@ -110,6 +134,8 @@ BF.CONFIG = {
     'Aseo quirúrgico',
     'Cambio de VAC',
     'Recambio de espaciador por IPR',
+    'Resección de lesión de cíclope',
+    'Movilización bajo anestesia',
     'Artrofibrosis: liberación artroscópica',
     'Plicae sinovial / banda de Lannelongue',
     'Cuerpo libre intraarticular',
@@ -153,6 +179,8 @@ BF.CONFIG.ROLES_CIRUJANO = ['Cirujano (supervisado)', 'Cirujano (independiente)'
 
 /* Compatibilidad de nombres anteriores del catálogo. */
 BF.CONFIG.PROCEDIMIENTO_ALIAS = {
+  'Estabilización de rótula (MPFL)': 'Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)',
+  'Reconstrucción de esquina posterolateral': 'Reconstrucción de esquina posterolateral (EPL)',
   'Laxitud multiligamentaria: tenodesis': 'Tenodesis extraarticular lateral (LET)',
   'Fractura de meseta tibial: osteosíntesis': 'Fractura Platillos Tibiales',
   'Fractura de cóndilo femoral: osteosíntesis': 'Fractura Fémur Distal',
@@ -166,7 +194,7 @@ BF.CONFIG.procedureArea = (name) => {
   if (index < 0) return 'Otros';
   const boundaries = [
     ['Artroscopia diagnóstica', 'Menisco'], ['Reconstrucción de LCA', 'Ligamentos'],
-    ['Estabilización de rótula (MPFL)', 'Patelofemoral'], ['Prótesis total de rodilla (PTR)', 'Artroplastia'],
+    ['Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)', 'Patelofemoral'], ['Prótesis total de rodilla (PTR)', 'Artroplastia'],
     ['Osteotomía tibial alta (HTO)', 'Osteotomías'], ['Condroplastia / regularización', 'Cartílago'],
     ['Fractura Fémur Distal', 'Fracturas'], ['Sinovectomía (artroscópica/abierta)', 'Otros']
   ];
@@ -181,11 +209,93 @@ BF.CONFIG.procedureObjectives = (objectives) => {
   return normalized;
 };
 
+/* El catálogo ayuda a registrar; no deduce clasificaciones clínicas. */
+BF.CONFIG.diagnosisKey = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+BF.CONFIG.diagnosisEntry = (value, preferredGroup = '') => {
+  const key = BF.CONFIG.diagnosisKey(value);
+  const preferred = BF.CONFIG.DIAGNOSTICOS[preferredGroup];
+  const preferredType = Array.isArray(preferred) ? preferred.find((name) => BF.CONFIG.diagnosisKey(name) === key) : null;
+  if (preferredType) return { diagnosticoGrupo: preferredGroup, diagnosticoTipo: preferredType };
+  for (const [grupo, names] of Object.entries(BF.CONFIG.DIAGNOSTICOS)) {
+    const tipo = names.find((name) => BF.CONFIG.diagnosisKey(name) === key);
+    if (tipo) return { diagnosticoGrupo: grupo, diagnosticoTipo: tipo };
+  }
+  return null;
+};
+BF.CONFIG.isTibialPlateauDiagnosis = (value) => {
+  const text = BF.CONFIG.diagnosisKey(value);
+  return /\bfractura\b/.test(text) && /\b(?:platillos?|mesetas?)\b/.test(text) && /\btibia(?:l|les)?\b/.test(text);
+};
+BF.CONFIG.diagnosisFields = (c) => {
+  const group = String(c.diagnosticoGrupo || '');
+  const type = String(c.diagnosticoTipo || '');
+  const diagnosis = BF.CONFIG.diagnosisKey(c.diagnostico);
+  const base = BF.CONFIG.diagnosisKey(type);
+  const options = BF.CONFIG.DIAGNOSTICOS[group];
+  const selected = Array.isArray(options) && options.includes(type) &&
+    (diagnosis === base || (diagnosis.startsWith(base) && /^[\s,;:.(\/-]/.test(diagnosis.slice(base.length))));
+  return {
+    diagnosticoGrupo: selected ? group : '',
+    diagnosticoTipo: selected ? type : '',
+    clasificacionSchatzker: BF.CONFIG.isTibialPlateauDiagnosis(c.diagnostico) && BF.CONFIG.SCHATZKER.includes(c.clasificacionSchatzker) ? c.clasificacionSchatzker : ''
+  };
+};
+
+BF.CONFIG.optionalBoolean = (value) => value === true || value === 'true' ? true : value === false || value === 'false' ? false : null;
+BF.CONFIG.isMeniscalDiagnosis = (name) => /menisc/i.test(name);
+BF.CONFIG.isChondralDiagnosis = (name) => /condral|osteocondr|cartilag/i.test(BF.CONFIG.diagnosisKey(name));
+/* Un caso antiguo sigue siendo un diagnóstico: nunca se separa texto clínico automáticamente. */
+BF.CONFIG.caseDiagnoses = (c = {}) => {
+  const legacy = { id: 'legacy', nombre: c.diagnostico, grupo: c.diagnosticoGrupo, tipo: c.diagnosticoTipo,
+    clasificacionSchatzker: c.clasificacionSchatzker, clasificacionMultiligamentaria: c.clasificacionMultiligamentaria,
+    patronMultiligamentario: c.patronMultiligamentario };
+  const source = Array.isArray(c.diagnosticos) ? c.diagnosticos : c.diagnostico ? [legacy] : [];
+  const ids = new Set();
+  return source.filter((d) => d && typeof d === 'object' && typeof d.nombre === 'string' && d.nombre.trim()).map((d, i) => {
+    let id = String(d.id || 'dx-' + i);
+    if (ids.has(id)) id = 'dx-' + i;
+    while (ids.has(id)) id += '-';
+    ids.add(id);
+    const nombre = d.nombre.trim(), detalle = String(d.detalle || '').trim();
+    const full = nombre + ' ' + detalle;
+    const metadata = BF.CONFIG.diagnosisFields({ diagnostico: nombre, diagnosticoGrupo: d.grupo, diagnosticoTipo: d.tipo, clasificacionSchatzker: d.clasificacionSchatzker });
+    const multi = BF.CONFIG.isMultiligamentaryDiagnosis(full);
+    return { id, nombre, grupo: metadata.diagnosticoGrupo, tipo: metadata.diagnosticoTipo, detalle,
+      patronMeniscal: BF.CONFIG.isMeniscalDiagnosis(nombre) && BF.CONFIG.PATRONES_MENISCALES.includes(d.patronMeniscal) ? d.patronMeniscal : '',
+      condralReinsertable: BF.CONFIG.isChondralDiagnosis(nombre) ? BF.CONFIG.optionalBoolean(d.condralReinsertable) : null,
+      clasificacionSchatzker: BF.CONFIG.isTibialPlateauDiagnosis(full) && BF.CONFIG.SCHATZKER.includes(d.clasificacionSchatzker) ? d.clasificacionSchatzker : '',
+      clasificacionMultiligamentaria: multi && BF.CONFIG.SCHENCK.includes(d.clasificacionMultiligamentaria) ? d.clasificacionMultiligamentaria : '',
+      patronMultiligamentario: multi ? String(d.patronMultiligamentario || '') : '' };
+  });
+};
+BF.CONFIG.diagnosisDescription = (d, classifications = true) => [d.nombre, d.patronMeniscal,
+  d.condralReinsertable === true ? 'Reinsertable' : d.condralReinsertable === false ? 'No reinsertable' : '', d.detalle,
+  classifications && d.clasificacionSchatzker ? 'Schatzker ' + d.clasificacionSchatzker : '',
+  classifications && d.clasificacionMultiligamentaria ? 'Schenck ' + d.clasificacionMultiligamentaria : '',
+  classifications ? d.patronMultiligamentario : ''].filter(Boolean).join(' · ');
+BF.CONFIG.withDiagnoses = (c) => {
+  const list = BF.CONFIG.caseDiagnoses(c), first = list[0];
+  return { ...c, diagnosticos: list, diagnostico: list.map((d) => BF.CONFIG.diagnosisDescription(d, false)).join(' + '),
+    diagnosticoGrupo: first?.grupo || '', diagnosticoTipo: first?.tipo || '',
+    clasificacionSchatzker: list.find((d) => d.clasificacionSchatzker)?.clasificacionSchatzker || '',
+    clasificacionMultiligamentaria: list.find((d) => d.clasificacionMultiligamentaria)?.clasificacionMultiligamentaria || '',
+    patronMultiligamentario: list.find((d) => d.patronMultiligamentario)?.patronMultiligamentario || '' };
+};
+BF.CONFIG.procedureShortName = (name) => ({ 'Reconstrucción de LCA': 'RLCA', 'Reconstrucción de LCP': 'RLCP',
+  'Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)': 'RLPFM', 'Reconstrucción de esquina posteromedial (EPM)': 'EPM',
+  'Reconstrucción de esquina posterolateral (EPL)': 'EPL', 'Prótesis total de rodilla (PTR)': 'PTR',
+  'Reparación meniscal (sutura)': 'Sutura meniscal' })[BF.CONFIG.procedureName(name)] || name;
+BF.CONFIG.procedureMatches = (name, query) => BF.CONFIG.diagnosisKey(name + ' ' + BF.CONFIG.procedureShortName(name)).includes(BF.CONFIG.diagnosisKey(query));
+BF.CONFIG.procedureSummary = (c) => {
+  const list = [...new Set([c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean).map(BF.CONFIG.procedureName))];
+  return list.length > 1 ? list.map(BF.CONFIG.procedureShortName).join(' + ') : list[0] || 'Procedimiento sin registrar';
+};
+
 BF.CONFIG.personalStepsFor = (c) => {
   const procedures = [c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean).map(BF.CONFIG.procedureName);
   if (!procedures.length) return [];
   const text = procedures.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const steps = ['Abordaje'];
+  const steps = ['Cx completa', 'Abordaje'];
   const arthroscopic = /artroscop/.test(String(c.abordaje || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()) || /artroscop/.test(text);
   const acl = BF.CONFIG.procedureDetailsFor(procedures).injertoLca;
   const diagnosis = String(c.diagnostico || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -217,13 +327,23 @@ BF.CONFIG.suggestTags = (c) => {
   if (/\blca\b/.test(text)) add('LCA');
   if (/\blcp\b/.test(text)) add('LCP');
   if (/\blet\b/.test(text)) add('LET');
+  if (/\brlpfm\b|\bmpfl\b/.test(text)) add('RLPFM');
+  if (/\bepm\b/.test(text)) add('EPM');
+  if (/\bepl\b/.test(text)) add('EPL');
   if (/revision|recambio/.test(text)) add('Revisión');
   if (/reparacion meniscal/.test(text)) add('Sutura meniscal');
   if (BF.CONFIG.isMultiligamentaryDiagnosis(c.diagnostico) || /multiligament/.test(text)) add('Multiligamentaria');
   const details = BF.CONFIG.procedureDetailsFor(procedures);
   if (details.injertoLca && c.injertoLca) add(`Injerto: ${c.injertoLca}`);
   if (details.tecnicaMeniscal && c.tecnicaMeniscal) add(`Técnica meniscal: ${c.tecnicaMeniscal}`);
-  if (BF.CONFIG.isMultiligamentaryDiagnosis(c.diagnostico) && c.clasificacionMultiligamentaria) add(`Schenck ${c.clasificacionMultiligamentaria}`);
+  for (const d of BF.CONFIG.caseDiagnoses(c)) {
+    if (d.grupo) add(d.grupo);
+    if (d.tipo) add(d.tipo);
+    if (d.patronMeniscal) add(`${d.tipo || d.nombre} · ${d.patronMeniscal}`);
+    if (d.condralReinsertable != null) add(`${d.tipo || d.nombre} · ${d.condralReinsertable ? 'Reinsertable' : 'No reinsertable'}`);
+    if (d.clasificacionSchatzker) add(`Schatzker ${d.clasificacionSchatzker}`);
+    if (d.clasificacionMultiligamentaria) add(`Schenck ${d.clasificacionMultiligamentaria}`);
+  }
   if (tags.includes('LCA') && tags.includes('Sutura meniscal')) add('LCA + sutura meniscal');
   if (tags.includes('LCA') && tags.includes('LET')) add('LCA + LET');
   return tags;

@@ -1,6 +1,26 @@
 # Continuidad del proyecto: Bitácora Fellow
 
-Actualizado: 9 de octubre de 2026. Resumen del desarrollo y las decisiones de la conversación; no es una transcripción completa.
+Actualizado: 8 de noviembre de 2026. Estado vigente y decisiones del desarrollo; no es una transcripción completa.
+
+## Estado actual
+
+- Añadida «Cx completa» como primera opción de «Pasos que realicé personalmente», disponible al elegir un procedimiento y sin preselección. Usa el almacenamiento y las exportaciones existentes. Recursos locales v=45; 38/38 pruebas correctas. [Bitácora](bitacoras/2026-11-08-cx-completa.md).
+- Objetivo activo: probar en la demo local las correcciones de la auditoría, sin publicar ni sincronizar.
+- Implementado localmente: varios diagnósticos por caso, cada uno con categoría, detalles y clasificaciones propias. Patrón meniscal (incluye Radial), lesión condral reinsertable Sí/No, Schatzker opcional y Schenck directamente desde Luxación de rodilla. Agregar o quitar un diagnóstico conserva los otros. Texto libre, sugerencias y borradores conservados.
+- Procedimientos solicitados: reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL), esquina posteromedial (EPM) y esquina posterolateral (EPL), disponibles como principal o asociado. RLPFM y EPL reemplazan etiquetas previas mediante alias; EPM es nuevo. Casos y metas anteriores mantienen la compatibilidad.
+- Nuevas correcciones: Reinserción condral como procedimiento principal/asociado; búsquedas por RLCA/RLCP; resumen de procedimientos combinados y diagnósticos en tabla y tarjetas; etiquetas redundantes ocultas sólo en presentación. Isquemia/complicación intraoperatoria distinguen Sí, No y vacío. La tasa de complicaciones excluye casos sin respuesta.
+- Verificado: 38 pruebas de regresión correctas, sintaxis correcta en 12 módulos JS y `git diff --check`. Las verificaciones anteriores de diagnósticos múltiples se conservan; se añadieron catálogo ampliado, motivos múltiples de revisión y conteo único en metas, y revisión del botón Revisión protésica a 320 px.
+- Base de esta ampliación: `e274750`, rama `main`. El usuario autorizó guardar los cambios acumulados en un commit local. Recursos `v=45`, formato de respaldo `version: 2` con importación de casos antiguos. [Registro del commit](bitacoras/2026-11-08-commit-ampliacion.md).
+- Usuarios/base de datos: se discutieron Supabase, Firebase y Clerk + Supabase. No hay proveedor elegido ni implementación; continúa la sincronización con GitHub.
+- Auditoría posterior: se simularon y guardaron cuatro casos ficticios en Chrome, `http://127.0.0.1:8770/?demo=1`, CIR-0015–CIR-0018; persistieron al reabrir. Sin configuración ni acciones de sincronización. El caso de reinserción condral requirió Otro y notas porque falta en el catálogo. El usuario confirmó la descarga de un respaldo.
+- Prueba de la versión mejorada: CIR-0019–CIR-0022 en la misma demo local de Chrome (22 casos totales). Buscar `Prueba mejorada` para aislar los cuatro. Los casos originales de la auditoría se conservaron como comparación.
+- Compatibilidad: los diagnósticos antiguos compuestos se conservan como una sola descripción, sin separarlos ni inferir datos clínicos. Respuestas negativas ya guardadas se conservan; no se pueden distinguir retrospectivamente de antiguos valores predeterminados. Los nuevos campos vacíos se guardan como null y se exportan vacíos en CSV.
+- Próximo paso: continuar la revisión en la demo. Commit local autorizado el 8 de noviembre. Push y publicación pendientes de solicitud.
+- Ampliación aprobada para demo: menisco discoide, déficit meniscal, falla de plastia y cíclope; categoría Revisión protésica con motivos combinables. Añadidos tallado, reinserción de raíz, injerto de túneles, fijación/perforaciones osteocondrales, resección de cíclope, movilización bajo anestesia, DAIR, retiro con espaciador y reimplantación. No se elige una cirugía automáticamente por diagnóstico.
+- Demo ampliada: CIR-0023 discoide con tallado/sutura; CIR-0024 revisión por aflojamiento e inestabilidad, con una cirugía. En Chrome, puerto 8770, buscar Catálogo ampliado (2 de 24 casos). Detalles adicionales de morfología, estabilidad, componentes y etapa se pueden escribir; estructurarlos es el siguiente paso del plan, todavía pendiente.
+- Plan y última ejecución: [plan y demo del catálogo ampliado](bitacoras/2026-11-08-plan-y-demo-catalogo-ampliado.md). La propuesta anterior queda como historial. Sin publicar ni sincronizar.
+- Última bitácora: [implementación de diagnósticos múltiples](bitacoras/2026-11-08-demo-diagnosticos-multiples.md). La [auditoría anterior](bitacoras/2026-11-08-auditoria-cuatro-casos.md) conserva el comportamiento previo a las correcciones.
+- Detalle de esta ejecución: [bitácora del 08-11-2026](bitacoras/2026-11-08-diagnosticos-y-procedimientos.md). Comandos: [guía de desarrollo](guia-desarrollo.md).
 
 ## Objetivo
 
@@ -69,6 +89,4 @@ La configuración de sincronización y los casos del usuario están separados de
 
 Nombre previsto: **Bitácora Fellow**. Carpeta principal: la de `main`; carpeta secundaria de referencia: el worktree `review-redesign` indicado arriba.
 
-Este documento y `AGENTS.md` permiten recuperar el contexto en futuras conversaciones. Su creación no registra por sí misma el proyecto en la interfaz de Codex ni mueve esta conversación a un proyecto. Ese registro debe confirmarse en la app.
-
-No había una nueva tarea de producto pendiente al preparar este resumen. El siguiente objetivo del usuario es organizar el proyecto local y conservar el contexto de esta conversación.
+El usuario confirmó que agregó la conversación al proyecto/carpeta de Codex. Este documento y `AGENTS.md` conservan el contexto en archivos para futuras conversaciones, independientemente del historial disponible en la app.

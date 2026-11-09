@@ -69,6 +69,7 @@ Abre <http://localhost:8765/>. También puedes abrir `index.html` directamente, 
 | Adaptar procedimientos, campos o metas iniciales | [Personalización](docs/guia-de-uso.md#9-personalizar) |
 | Entender la interfaz y sus criterios | [Implementación UI/UX](docs/implementacion-ui-ux.md) · [Paleta institucional](docs/paleta-institucional.md) |
 | Conocer el cuaderno digital y la frecuencia de procedimientos | [Diseño e implementación](docs/daybook-implementation.md) |
+| Retomar el desarrollo y sus decisiones | [Estado vigente](docs/continuidad-del-proyecto.md) · [Guía de desarrollo](docs/guia-desarrollo.md) · [Bitácoras](docs/bitacoras/) |
 
 Para validar cambios en la app, ejecuta las pruebas de regresión con Node.js:
 

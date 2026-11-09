@@ -15,24 +15,28 @@ window.BF = window.BF || {};
 
   const TEXT_FIELDS = [
     'codigo', 'fecha', 'hora', 'sexo', 'lateralidad', 'institucion', 'diagnostico',
+    'diagnosticoGrupo', 'diagnosticoTipo', 'clasificacionSchatzker',
     'antecedentesRodilla', 'comorbilidades', 'cirujano', 'rol', 'procedimientoPrincipal',
     'abordaje', 'anestesia', 'hallazgos', 'implantes', 'profilaxis', 'rehabilitacion', 'injertoLca', 'tecnicaMeniscal', 'patronMultiligamentario', 'clasificacionMultiligamentaria',
     'osteotomiaTibialTipo', 'osteotomiaTibialLado', 'osteotomiaFemoralTipo', 'osteotomiaFemoralLado',
     'complicacionIntraopDetalle', 'complicacionPostopDetalle', 'complicacionClavienDindo', 'notas'
   ];
   const NUM_FIELDS = ['edad', 'imc', 'duracionMin', 'torniqueteMin', 'internacionDias'];
-  const BOOL_FIELDS = ['torniquete', 'complicacionIntraop', 'uti', 'complicacionPostop', 'presentadoEnAteneo', 'publicable'];
+  const BOOL_FIELDS = ['uti', 'complicacionPostop', 'presentadoEnAteneo', 'publicable'];
 
   /** Completa un caso con todos los campos del modelo (evita `undefined` en la UI). */
   function normalize(raw) {
     const c = Object.assign({}, raw);
     c.id = c.id || uuid();
     for (const f of TEXT_FIELDS) c[f] = c[f] == null ? '' : String(c[f]);
+    if (!Array.isArray(c.diagnosticos)) Object.assign(c, C.diagnosisFields(c));
+    Object.assign(c, C.withDiagnoses(c));
     const originalProcedure = c.procedimientoPrincipal;
     c.procedimientoPrincipal = C.procedureName(originalProcedure);
     if (originalProcedure !== c.procedimientoPrincipal) c.procedimientoPrincipalAnterior = c.procedimientoPrincipalAnterior || originalProcedure;
     for (const f of NUM_FIELDS) c[f] = num(c[f]);
     for (const f of BOOL_FIELDS) c[f] = !!c[f];
+    for (const f of ['torniquete', 'complicacionIntraop']) c[f] = C.optionalBoolean(c[f]);
     if (Array.isArray(c.procedimientosAsociados) && c.procedimientosAsociados.some((p) => C.procedureName(p) !== p)) c.procedimientosAsociadosAnteriores = c.procedimientosAsociadosAnteriores || [...c.procedimientosAsociados];
     c.procedimientosAsociados = Array.isArray(c.procedimientosAsociados) ? [...new Set(c.procedimientosAsociados.filter(Boolean).map(C.procedureName))].filter((p) => p !== c.procedimientoPrincipal) : [];
     c.tags = Array.isArray(c.tags) ? c.tags.filter(Boolean) : [];
@@ -58,7 +62,7 @@ window.BF = window.BF || {};
   /** Todos los procedimientos de un caso (principal + asociados). */
   const proceduresOf = (c) => [c.procedimientoPrincipal, ...(c.procedimientosAsociados || [])].filter(Boolean);
   const isSurgeon = (c) => C.ROLES_CIRUJANO.includes(c.rol);
-  const hasComplication = (c) => c.complicacionIntraop;
+  const hasComplication = (c) => c.complicacionIntraop === true;
 
   /* ═════════ Estado ═════════ */
 
@@ -164,7 +168,10 @@ window.BF = window.BF || {};
   function update(id, patch) {
     const i = state.casos.findIndex((c) => c.id === id);
     if (i < 0) return null;
-    const c = normalize(Object.assign({}, state.casos[i], patch, { id, actualizado: nowISO() }));
+    const merged = Object.assign({}, state.casos[i], patch, { id, actualizado: nowISO() });
+    // Compatibilidad con clientes que todavía editan el campo de texto antiguo.
+    if (Object.hasOwn(patch, 'diagnostico') && !Object.hasOwn(patch, 'diagnosticos') && patch.diagnostico !== state.casos[i].diagnostico) delete merged.diagnosticos;
+    const c = normalize(merged);
     c.codigo = c.codigo || nextCodigo();
     state.casos[i] = c;
     touch(`Actualiza caso ${c.codigo}`);
@@ -356,7 +363,9 @@ window.BF = window.BF || {};
     if (f.procedimiento && !proceduresOf(c).includes(f.procedimiento)) return false;
     if (f.q) {
       const blob = [
-        c.codigo, c.diagnostico, c.hallazgos, c.implantes, c.cirujano, c.institucion,
+        c.codigo, c.diagnostico, c.diagnosticoGrupo, c.diagnosticoTipo,
+        c.clasificacionSchatzker ? `Schatzker ${c.clasificacionSchatzker}` : '', c.hallazgos, c.implantes, c.cirujano, c.institucion,
+        C.caseDiagnoses(c).map((d) => C.diagnosisDescription(d)).join(' '),
         c.procedimientoPrincipal, (c.procedimientosAsociados || []).join(' '),
         c.notas, (c.tags || []).join(' '), c.complicacionIntraopDetalle, c.complicacionPostopDetalle
       ].join(' ').toLowerCase();
@@ -372,6 +381,7 @@ window.BF = window.BF || {};
     const total = casos.length;
     const comoCirujano = casos.filter(isSurgeon);
     const complicaciones = casos.filter(hasComplication);
+    const complicacionesRegistradas = casos.filter((c) => c.complicacionIntraop === true || c.complicacionIntraop === false).length;
     const duraciones = casos.map((c) => c.duracionMin).filter((v) => v != null);
     const anio = new Date().getFullYear();
     const delAnio = casos.filter((c) => (c.fecha || '').startsWith(String(anio)));
@@ -394,7 +404,8 @@ window.BF = window.BF || {};
       comoCirujanoIndependiente: casos.filter((c) => c.rol === 'Cirujano (independiente)').length,
       pctCirujano: pct(comoCirujano.length, total),
       complicaciones: complicaciones.length,
-      tasaComplicaciones: pct(complicaciones.length, total),
+      complicacionesRegistradas,
+      tasaComplicaciones: complicacionesRegistradas ? pct(complicaciones.length, complicacionesRegistradas) : null,
       duracionPromedio: avg(duraciones),
       duracionMediana: median(duraciones),
       duracionTotal: duraciones.reduce((a, b) => a + b, 0),

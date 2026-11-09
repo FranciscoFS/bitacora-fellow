@@ -2,6 +2,10 @@
 
 Antes de continuar el desarrollo, lee `docs/continuidad-del-proyecto.md` y revisa el estado de Git. Ese documento conserva las decisiones de esta conversación y la ubicación de ambas carpetas.
 
+- Estado vigente: [continuidad del proyecto](docs/continuidad-del-proyecto.md).
+- Ejecuciones y decisiones: [bitácoras fechadas](docs/bitacoras/); consulta la última relevante.
+- Comandos y verificaciones: [guía de desarrollo](docs/guia-desarrollo.md).
+
 - Carpeta principal: `C:/Users/franc/OneDrive/Desktop/Proyectos/Bitacora Fellow`, rama `main`.
 - Copia alternativa (worktree del mismo repositorio): `C:/Users/franc/.codex/worktrees/review-redesign/Bitacora Fellow`, rama `redesign/ui-ux`.
 - `main` es la rama principal y la fuente de GitHub Pages. La interfaz de `redesign/ui-ux` ya se integró en ella. Trabaja en `main` salvo indicación del usuario.
@@ -11,3 +15,4 @@ Antes de continuar el desarrollo, lee `docs/continuidad-del-proyecto.md` y revis
 - Para cambios funcionales, ejecuta `node --test tests/regression.test.cjs` y revisa la sintaxis de los módulos afectados. Para cambios visuales, comprueba móvil y escritorio.
 - Verifica qué cambios locales y remotos existen antes de un commit o merge. Las dos carpetas pueden estar en commits distintos; no las supongas idénticas.
 - Actualiza el documento de continuidad cuando cambien decisiones importantes, ramas o ubicaciones. Los informes de diseño antiguos describen etapas previas y no sustituyen el estado actual.
+- Al cerrar trabajo sustantivo, actualiza el estado y registra una bitácora fechada con cambios, pruebas, limitaciones y pendientes; conserva las anteriores.

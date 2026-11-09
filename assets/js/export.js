@@ -9,7 +9,7 @@ window.BF = window.BF || {};
   const COLUMNS = [
     ['codigo', 'Código'], ['fecha', 'Fecha'], ['hora', 'Hora'], ['edad', 'Edad'], ['sexo', 'Sexo'],
     ['lateralidad', 'Lateralidad'], ['imc', 'IMC'], ['institucion', 'Institución'],
-    ['diagnostico', 'Diagnóstico'], ['patronMultiligamentario', 'Patrón multiligamentario'], ['clasificacionMultiligamentaria', 'Clasificación de Schenck'], ['antecedentesRodilla', 'Antecedentes rodilla'],
+    ['diagnostico', 'Diagnóstico'], ['_diagnosticos', 'Diagnósticos y detalles'], ['diagnosticoGrupo', 'Categoría del diagnóstico'], ['diagnosticoTipo', 'Diagnóstico del catálogo'], ['clasificacionSchatzker', 'Clasificación de Schatzker'], ['patronMultiligamentario', 'Patrón multiligamentario'], ['clasificacionMultiligamentaria', 'Clasificación de Schenck'], ['antecedentesRodilla', 'Antecedentes rodilla'],
     ['comorbilidades', 'Comorbilidades'], ['cirujano', 'Cirujano supervisor'], ['rol', 'Mi rol'],
     ['procedimientoPrincipal', 'Procedimiento principal'], ['_asociados', 'Procedimientos asociados'], ['_pasos', 'Pasos que realicé'],
     ['injertoLca', 'Tipo de injerto LCA'], ['tecnicaMeniscal', 'Técnica de sutura meniscal'],
@@ -36,6 +36,7 @@ window.BF = window.BF || {};
     const head = COLUMNS.map(([, label]) => label).join(';');
     const lines = casos.map((c) => COLUMNS.map(([key]) => {
       if (key === '_asociados') return cell((c.procedimientosAsociados || []).join(' | '));
+      if (key === '_diagnosticos') return cell(C.caseDiagnoses(c).map((d) => C.diagnosisDescription(d)).join(' | '));
       if (key === '_pasos') return cell((c.pasosRealizados || []).join(' | '));
       if (key === '_tags') return cell((c.tags || []).join(', '));
       if (key === '_controles') return cell((c.seguimiento || []).length);
@@ -78,7 +79,8 @@ window.BF = window.BF || {};
     if (grupos != null && (typeof grupos !== 'object' || Array.isArray(grupos) || Object.entries(grupos).some(([key, members]) => !key.trim() || !Array.isArray(members) || !members.length || members.some((p) => typeof p !== 'string' || !p.trim())))) throw new Error('Los grupos de metas no son válidos.');
     if (borrador && (!borrador.caso || typeof borrador.caso !== 'object' || Array.isArray(borrador.caso))) throw new Error('El borrador del respaldo no es válido.');
     for (const caso of [...casos, ...(borrador ? [borrador.caso] : [])]) {
-      if (['tags', 'procedimientosAsociados', 'seguimiento', 'pasosRealizados'].some((key) => caso[key] != null && !Array.isArray(caso[key]))) throw new Error('Hay listas de datos con un formato inválido. No se modificaron los datos.');
+      if (['tags', 'procedimientosAsociados', 'seguimiento', 'pasosRealizados', 'diagnosticos'].some((key) => caso[key] != null && !Array.isArray(caso[key]))) throw new Error('Hay listas de datos con un formato inválido. No se modificaron los datos.');
+      if (caso.diagnosticos?.some((d) => !d || typeof d !== 'object' || Array.isArray(d) || typeof d.nombre !== 'string' || !d.nombre.trim())) throw new Error('Hay diagnósticos con un formato inválido. No se modificaron los datos.');
       if (caso.seguimiento?.some((item) => !item || typeof item !== 'object' || Array.isArray(item))) throw new Error('El seguimiento contiene datos inválidos. No se modificaron los datos.');
     }
     return { casos, objetivos: objetivos ? Object.fromEntries(Object.entries(objetivos)) : null, grupos, modo: parsed?.preferencias?.objetivoModo, borrador };

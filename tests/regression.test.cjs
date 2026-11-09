@@ -32,6 +32,180 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('El catálogo ampliado distingue discoide, tallado y motivos múltiples de revisión', () => {
+  const {context,S,E}=app(), C=context.BF.CONFIG;
+  assert.ok(C.DIAGNOSTICOS.Menisco.includes('Menisco lateral discoide'));
+  const tallado='Meniscoplastia / tallado meniscal (saucerización)';
+  for(const p of [tallado,'Reinserción de raíz meniscal']) {
+    assert.ok(C.PROCEDIMIENTOS_PRINCIPALES.includes(p)); assert.equal(C.procedureArea(p),'Menisco');
+  }
+  for(const p of ['Fijación de fragmento osteocondral','Perforaciones por osteocondritis disecante']) assert.equal(C.procedureArea(p),'Cartílago');
+  for(const p of ['Desbridamiento y retención de implantes (DAIR)','Retiro de prótesis y colocación de espaciador','Reimplantación protésica']) assert.equal(C.procedureArea(p),'Artroplastia');
+  assert.equal(C.procedureArea('Injerto óseo de túneles'),'Ligamentos');
+  const diagnoses=['Aflojamiento aséptico de prótesis','Inestabilidad protésica'].map((nombre,i)=>({id:'r'+i,nombre,grupo:'Revisión protésica',tipo:nombre}));
+  S.add(caso('revision',{diagnosticos:diagnoses,procedimientoPrincipal:'Prótesis de revisión',autoTags:[]}));
+  assert.equal(S.get('revision').diagnosticos.length,2);
+  S.setObjetivo('Prótesis de revisión',10);
+  assert.equal(S.progreso(S.all()).find(g=>g.proc==='Prótesis de revisión').logrado,1);
+  assert.match(E.toCsv(S.all()),/Aflojamiento aséptico de prótesis/);
+  assert.equal(C.diagnosisEntry('Infección periprotésica','Infección').diagnosticoGrupo,'Infección');
+  assert.equal(C.diagnosisEntry('Infección periprotésica','Revisión protésica').diagnosticoGrupo,'Revisión protésica');
+});
+
+test('Varios diagnósticos con detalles sobreviven a JSON, CSV y cambios independientes', () => {
+  const { S, E, U, downloads } = app();
+  const lca = { id: 'lca', nombre: 'Lesión de LCA', grupo: 'Ligamentos', tipo: 'Lesión de LCA' };
+  const menisco = { id: 'menisco', nombre: 'Lesión de menisco lateral', grupo: 'Menisco', tipo: 'Lesión de menisco lateral', patronMeniscal: 'Radial' };
+  S.add(caso('multiple', { diagnosticos: [lca, menisco], autoTags: [], manualTags: ['Personal'], procedimientosAsociados: ['Reparación meniscal (sutura)'] }));
+  assert.equal(S.get('multiple').diagnosticos.length, 2);
+  assert.match(S.get('multiple').diagnostico, /LCA.*menisco lateral.*Radial/);
+  assert.ok(S.get('multiple').tags.includes('Lesión de menisco lateral · Radial'));
+  U.store.del('draft'); E.exportJson();
+  const target = app(); target.E.applyImport(target.E.previewImport(JSON.parse(downloads[0].content)), 'replace');
+  target.S.loadLocal();
+  assert.equal(target.S.get('multiple').diagnosticos[1].patronMeniscal, 'Radial');
+  assert.match(target.E.toCsv(target.S.all()), /Diagnósticos y detalles/);
+  assert.match(target.E.toCsv(target.S.all()), /Lesión de menisco lateral · Radial/);
+  S.update('multiple', { diagnosticos: [menisco] });
+  assert.equal(S.get('multiple').diagnosticos[0].id, 'menisco');
+  assert.equal(S.get('multiple').diagnosticos[0].patronMeniscal, 'Radial');
+  assert.ok(!S.get('multiple').tags.includes('Lesión de LCA'));
+  assert.ok(S.get('multiple').tags.includes('Personal'));
+  S.update('multiple', { diagnosticos: [] });
+  assert.equal(S.get('multiple').diagnostico, '');
+  assert.equal(S.get('multiple').diagnosticoTipo, '');
+});
+
+test('Las clasificaciones pertenecen a su diagnóstico y se eliminan al quitarlo', () => {
+  const { S, context } = app(), C = context.BF.CONFIG;
+  const plateau = { id: 'plateau', nombre: 'Fractura de platillo tibial', grupo: 'Fracturas', tipo: 'Fractura de platillo tibial', clasificacionSchatzker: 'II' };
+  const dislocation = { id: 'dislocation', nombre: 'Luxación de rodilla', grupo: 'Ligamentos', tipo: 'Luxación de rodilla', clasificacionMultiligamentaria: 'KD III-M' };
+  S.add(caso('classifications', { diagnosticos: [plateau, dislocation], autoTags: [] }));
+  assert.ok(C.isMultiligamentaryDiagnosis('Luxación de rodilla'));
+  assert.ok(!C.isMultiligamentaryDiagnosis('Luxación de rótula'));
+  assert.equal(S.get('classifications').clasificacionMultiligamentaria, 'KD III-M');
+  assert.equal(S.filter({q:'Schenck KD III-M'}).length, 1);
+  S.update('classifications', { diagnosticos: [dislocation] });
+  assert.equal(S.get('classifications').clasificacionSchatzker, '');
+  assert.ok(!S.get('classifications').tags.includes('Schatzker II'));
+  assert.equal(S.get('classifications').diagnosticos[0].clasificacionMultiligamentaria, 'KD III-M');
+  S.update('classifications', { diagnosticos: [{ ...dislocation, nombre: 'Gonartrosis' }] });
+  assert.equal(S.get('classifications').clasificacionMultiligamentaria, '');
+  assert.equal(S.get('classifications').diagnosticos[0].clasificacionMultiligamentaria, '');
+});
+
+test('La lesión condral reinsertable y las cirugías combinadas se conservan sin sustituir procedimientos', () => {
+  const { S, context } = app(), C = context.BF.CONFIG;
+  S.add(caso('cartilage', { procedimientoPrincipal: 'Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)', procedimientosAsociados: ['Reinserción condral'], diagnosticos: [{id:'patella',nombre:'Luxación de rótula'}, {id:'cartilage',nombre:'Lesión condral',grupo:'Cartílago',tipo:'Lesión condral',condralReinsertable:true}],autoTags:[] }));
+  assert.ok(C.PROCEDIMIENTOS_PRINCIPALES.includes('Reinserción condral'));
+  assert.equal(C.procedureArea('Reinserción condral'), 'Cartílago');
+  assert.equal(S.get('cartilage').diagnosticos[1].condralReinsertable, true);
+  assert.ok(S.get('cartilage').tags.includes('Lesión condral · Reinsertable'));
+  assert.equal(C.procedureSummary(S.get('cartilage')), 'RLPFM + Reinserción condral');
+  assert.equal(C.procedureSummary(caso('multi',{procedimientosAsociados:['Reconstrucción de LCP','Reconstrucción de esquina posteromedial (EPM)']})), 'RLCA + RLCP + EPM');
+  assert.ok(C.procedureMatches('Reconstrucción de LCA','rlca'));
+  assert.ok(C.procedureMatches('Reconstrucción de LCP','RLCP'));
+  assert.ok(!C.procedureMatches('Reconstrucción de LCP','RLCA'));
+});
+
+test('Los datos antiguos mantienen texto, clasificaciones y respuestas negativas explícitas', () => {
+  const { S } = app();
+  const text = 'Lesión de LCA + lesión radial menisco lateral';
+  const legacy = S.normalize(caso('legacy',{diagnostico:text,torniquete:false,complicacionIntraop:false}));
+  assert.equal(legacy.diagnostico,text);
+  assert.equal(legacy.diagnosticos.length,1);
+  assert.equal(legacy.diagnosticos[0].nombre,text);
+  assert.equal(legacy.torniquete,false);
+  assert.equal(legacy.complicacionIntraop,false);
+  S.add(legacy); S.update('legacy',{diagnostico:'Diagnóstico escrito por cliente antiguo'});
+  assert.equal(S.get('legacy').diagnosticos[0].nombre,'Diagnóstico escrito por cliente antiguo');
+});
+
+test('No responder, Sí y No son estados diferentes y se exportan como tales', () => {
+  const { S, E } = app();
+  const unknown=S.normalize(caso('unknown'));
+  assert.equal(unknown.torniquete,null); assert.equal(unknown.complicacionIntraop,null);
+  assert.equal(S.hasComplication(unknown),false);
+  for(const value of [true,false,null]) {
+    const saved=S.normalize(caso('value',{torniquete:value,complicacionIntraop:value}));
+    assert.equal(saved.torniquete,value); assert.equal(saved.complicacionIntraop,value);
+    const [header,line]=E.toCsv([saved]).split('\r\n').map((row)=>row.split(';'));
+    assert.equal(line[header.indexOf('Torniquete')],value===null?'':value?'Sí':'No');
+  }
+  assert.equal(S.normalize(caso('string',{torniquete:'false'})).torniquete,false);
+  assert.equal(S.metrics([unknown]).tasaComplicaciones,null);
+  const metrics=S.metrics([unknown,S.normalize(caso('yes',{complicacionIntraop:true})),S.normalize(caso('no',{complicacionIntraop:false}))]);
+  assert.equal(metrics.complicacionesRegistradas,2);
+  assert.equal(metrics.tasaComplicaciones,50);
+});
+
+test('Un respaldo con diagnósticos múltiples inválidos se rechaza antes de cambiar casos', () => {
+  const { S,E }=app(); S.add(caso('existing'));
+  for(const diagnoses of ['incorrecto',[null],[{nombre:123}],[{nombre:''}]]) assert.throws(()=>E.previewImport({casos:[caso('bad',{diagnosticos:diagnoses})]}));
+  assert.equal(S.all().length,1); assert.equal(S.all()[0].id,'existing');
+});
+
+test('Diagnóstico estructurado y Schatzker sobreviven a JSON, CSV y almacenamiento sin clasificar casos antiguos', () => {
+  const { context, S, E, U, downloads } = app();
+  const diagnosis = 'Fractura de platillo tibial';
+  S.add(context.BF.CONFIG.withAutoTags(caso('plateau', { diagnostico: diagnosis, diagnosticoGrupo: 'Fracturas', diagnosticoTipo: diagnosis, clasificacionSchatzker: 'IV', procedimientoPrincipal: 'Reducción y osteosíntesis' })));
+  U.store.del('draft'); E.exportJson();
+  const payload = JSON.parse(downloads[0].content);
+  const target = app(); target.E.applyImport(target.E.previewImport(payload), 'replace');
+  target.S.loadLocal();
+  const restored = target.S.get('plateau');
+  assert.equal(restored.diagnostico, diagnosis);
+  assert.equal(restored.diagnosticoGrupo, 'Fracturas');
+  assert.equal(restored.diagnosticoTipo, diagnosis);
+  assert.equal(restored.clasificacionSchatzker, 'IV');
+  assert.ok(restored.tags.includes('Schatzker IV'));
+  assert.ok(restored.tags.includes(diagnosis));
+  assert.ok(target.E.toCsv([restored]).includes('Clasificación de Schatzker'));
+  assert.ok(target.E.toCsv([restored]).includes('"IV"'));
+  target.S.update('plateau', { excludedAutoTags: ['Schatzker IV'] });
+  assert.ok(!target.S.get('plateau').tags.includes('Schatzker IV'));
+  assert.equal(target.S.filter({ q: 'Schatzker IV' }).length, 1);
+  assert.equal(S.normalize(caso('old', { diagnostico: 'Fractura de meseta tibial Schatzker II' })).clasificacionSchatzker, '');
+  assert.equal(S.normalize(caso('old')).diagnosticoGrupo, '');
+});
+
+test('Cambiar diagnóstico elimina metadatos incompatibles y etiquetas automáticas, conservando el texto libre', () => {
+  const { context, S } = app(), C = context.BF.CONFIG;
+  const diagnosis = 'Fractura de platillo tibial';
+  S.add(C.withAutoTags(caso('change', { diagnostico: diagnosis + ', caso ficticio', diagnosticoGrupo: 'Fracturas', diagnosticoTipo: diagnosis, clasificacionSchatzker: 'II', manualTags: ['Revisar'], procedimientoPrincipal: 'Osteosíntesis' })));
+  assert.equal(S.get('change').diagnosticoTipo, diagnosis);
+  S.update('change', { diagnostico: 'Lesión meniscal: descripción libre' });
+  const changed = S.get('change');
+  assert.equal(changed.diagnostico, 'Lesión meniscal: descripción libre');
+  for (const field of ['diagnosticoGrupo', 'diagnosticoTipo', 'clasificacionSchatzker']) assert.equal(changed[field], '');
+  assert.ok(!changed.tags.includes('Schatzker II'));
+  assert.ok(!changed.tags.includes(diagnosis));
+  assert.ok(changed.tags.includes('Revisar'));
+  assert.equal(C.diagnosisFields({ diagnostico: diagnosis, clasificacionSchatzker: 'VII' }).clasificacionSchatzker, '');
+  assert.equal(C.diagnosisFields({ diagnostico: 'Fractura de rótula', clasificacionSchatzker: 'II' }).clasificacionSchatzker, '');
+  for (const text of [diagnosis, 'Fractura Platillos Tibiales', 'Fractura de meseta tibial lateral']) assert.ok(C.isTibialPlateauDiagnosis(text));
+  assert.ok(!C.isTibialPlateauDiagnosis('Microfracturas'));
+});
+
+test('RLPFM, EPM y EPL son distintos; sus alias conservan casos, metas y agrupaciones', () => {
+  const { context, S, E } = app(), C = context.BF.CONFIG;
+  const mpfl = 'Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)';
+  const epm = 'Reconstrucción de esquina posteromedial (EPM)', epl = 'Reconstrucción de esquina posterolateral (EPL)';
+  E.applyImport(E.previewImport({ casos: [caso('old', { procedimientoPrincipal: 'Estabilización de rótula (MPFL)', procedimientosAsociados: ['Reconstrucción de esquina posterolateral', epl, epm] })], objetivos: { 'Estabilización de rótula (MPFL)': 8, [mpfl]: 10, 'Reconstrucción de esquina posterolateral': 6 }, gruposObjetivos: { 'Estabilización de rótula (MPFL)': ['Estabilización de rótula (MPFL)', epm] } }), 'replace');
+  assert.equal(S.get('old').procedimientoPrincipal, mpfl);
+  assert.equal(S.get('old').procedimientoPrincipalAnterior, 'Estabilización de rótula (MPFL)');
+  assert.deepEqual(json(S.get('old').procedimientosAsociados), [epl, epm]);
+  assert.equal(S.getObjetivos()[mpfl], 10);
+  assert.equal(S.getObjetivos()[epl], 6);
+  assert.equal(S.progreso(S.all()).find((g) => g.proc === mpfl).logrado, 1);
+  for (const [p, area, tag] of [[mpfl, 'Patelofemoral', 'RLPFM'], [epm, 'Ligamentos', 'EPM'], [epl, 'Ligamentos', 'EPL']]) {
+    assert.ok(C.PROCEDIMIENTOS_PRINCIPALES.includes(p));
+    assert.equal(C.procedureArea(p), area);
+    assert.ok(C.suggestTags(caso('tags', { procedimientoPrincipal: p })).includes(tag));
+    assert.ok(C.personalStepsFor(caso('steps', { procedimientoPrincipal: p })).includes('Preparación del injerto'));
+  }
+});
+
 test('La práctica reciente respeta fechas inclusivas, año, DST y el rol de cirujano', () => {
   const { context } = app(), P=context.BF.practice;
   assert.deepEqual(json(P.dateRange('28','2026-10-02')),{desde:'2026-09-05',hasta:'2026-10-02'});
@@ -106,6 +280,7 @@ test('Reducción y osteosíntesis son procedimientos de Fracturas y se vinculan 
 test('Las opciones de participación dependen de los procedimientos sin marcar pasos automáticamente', () => {
   const { context, S } = app(); const C = context.BF.CONFIG;
   const combined = C.personalStepsFor(caso('combo', { abordaje: 'Artroscópico', procedimientosAsociados: ['Reparación meniscal (sutura)'] }));
+  assert.equal(combined[0], 'Cx completa');
   assert.ok(combined.includes('Artroscopia diagnóstica'));
   assert.ok(combined.includes('Sutura meniscal'));
   assert.ok(!combined.includes('Meniscectomía'));
@@ -127,6 +302,11 @@ test('Los pasos seleccionados se conservan en edición, JSON y CSV', () => {
   const target = app(); target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
   assert.deepEqual(json(target.S.get('steps').pasosRealizados), ['Abordaje', 'Sutura meniscal']);
   assert.ok(E.toCsv(S.all()).includes('Abordaje | Sutura meniscal'));
+  S.add(caso('complete', { pasosRealizados: ['Cx completa'] }));
+  const completeTarget = app();
+  completeTarget.E.applyImport(completeTarget.E.previewImport(json(S.packageData())), 'replace');
+  assert.deepEqual(json(completeTarget.S.get('complete').pasosRealizados), ['Cx completa']);
+  assert.ok(E.toCsv(S.all()).includes('Cx completa'));
   assert.throws(() => E.previewImport({ casos: [caso('bad', { pasosRealizados: 'Abordaje' })] }));
 });
 

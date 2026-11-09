@@ -52,9 +52,9 @@ window.BF = window.BF || {};
       kpi({ label: 'Como cirujano', value: m.comoCirujano, hint: `${m.pctCirujano}% del total`, tone: 'accent' }),
       kpi({ label: 'Horas de quirófano', value: num1(m.duracionTotal / 60, ' h'), hint: `${m.duracionTotal} min acumulados` }),
       kpi({
-        label: 'Complicaciones intraop.', value: m.complicaciones,
-        hint: `${m.tasaComplicaciones}% de los casos`,
-        tone: m.total ? (m.complicaciones ? 'bad' : 'good') : ''
+        label: 'Complicaciones intraop.', value: m.complicacionesRegistradas ? m.complicaciones : '—',
+        hint: m.complicacionesRegistradas ? `${m.tasaComplicaciones}% de ${m.complicacionesRegistradas} casos con registro` : '',
+        tone: m.complicacionesRegistradas ? (m.complicaciones ? 'bad' : 'good') : ''
       }),
       kpi({ label: 'Duración promedio', value: num1(m.duracionPromedio, ' min'), hint: 'promedio de los tiempos registrados' }),
       kpi({ label: 'Cirujano independiente', value: m.comoCirujanoIndependiente, hint: 'sin supervisión directa' }),
