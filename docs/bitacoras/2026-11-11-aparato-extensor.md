@@ -9,3 +9,7 @@ Procedimientos principales y asociados nuevos para cada tendón: reparación / r
 Verificación con 39/39 pruebas de regresión correctas, sintaxis de config.js y git diff --check correctos. La nueva prueba cubre clasificación del catálogo, respaldo/importación, CSV y compatibilidad de registros anteriores. Esta ejecución modifica datos del catálogo con controles existentes. Revisión visual en navegador pendiente.
 
 Recursos locales v=46. Base main limpia al inicio, commit 241623d. Cambios de esta ejecución pendientes de commit y publicación. La publicación anterior v45 se verificó después del push del 8 de noviembre según el resultado registrado en el chat.
+
+## Publicación verificada
+
+El usuario autorizó subir todo y actualizar. Commit b280ac4 creado y subido a main el 11 de noviembre. Se verificaron en GitHub Pages config.js?v=46 y Falla de reparación de tendón patelar. Se conserva la validación previa de 39 pruebas. La revisión visual adicional sigue pendiente.

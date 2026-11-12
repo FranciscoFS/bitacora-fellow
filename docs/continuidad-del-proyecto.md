@@ -4,7 +4,7 @@ Actualizado: 11 de noviembre de 2026. Estado vigente y decisiones del desarrollo
 
 ## Estado actual
 
-- Último desarrollo local: categoría Aparato extensor con roturas patelar/cuadricipital, fallas de reparación e insuficiencia. Procedimientos específicos de reparación/reinserción, revisión, reconstrucción y refuerzo. Recursos v=46, 39/39 pruebas correctas. Pendiente revisión en demo, commit y publicación de esta ampliación. [Bitácora del 11 de noviembre](bitacoras/2026-11-11-aparato-extensor.md).
+- Último desarrollo local: categoría Aparato extensor con roturas patelar/cuadricipital, fallas de reparación e insuficiencia. Procedimientos específicos de reparación/reinserción, revisión, reconstrucción y refuerzo. Recursos v=46, 39/39 pruebas correctas. Publicado el 11 de noviembre mediante commit b280ac4. Verificados en Pages los recursos v46 y la falla de reparación patelar. [Bitácora del 11 de noviembre](bitacoras/2026-11-11-aparato-extensor.md).
 - Publicación previa verificada el 8 de noviembre: commit `241623d` subido a main, Pages servía recursos v=45 y Cx completa. Las menciones siguientes a implementación local y publicación pendiente describen la etapa anterior a ese push.
 - Añadida «Cx completa» como primera opción de «Pasos que realicé personalmente», disponible al elegir un procedimiento y sin preselección. Usa el almacenamiento y las exportaciones existentes. Recursos locales v=45; 38/38 pruebas correctas. [Bitácora](bitacoras/2026-11-08-cx-completa.md).
 - Objetivo activo: probar en la demo local las correcciones de la auditoría, sin publicar ni sincronizar.
