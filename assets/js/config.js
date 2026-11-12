@@ -50,6 +50,7 @@ BF.CONFIG = {
     'Menisco': ['Menisco lateral discoide', 'Déficit meniscal posmeniscectomía', 'Lesión de menisco medial', 'Lesión de menisco lateral', 'Lesión de raíz meniscal', 'Lesión de rampa meniscal', 'Quiste parameniscal'],
     'Ligamentos': ['Falla de plastia de LCA', 'Lesión de LCA', 'Lesión de LCP', 'Lesión de LCM', 'Lesión de LCL', 'Lesión de esquina posteromedial', 'Lesión de esquina posterolateral', 'Lesión multiligamentaria', 'Luxación de rodilla'],
     'Patelofemoral': ['Inestabilidad patelofemoral', 'Luxación de rótula', 'Lesión del ligamento patelofemoral medial', 'Displasia troclear'],
+    'Aparato extensor': ['Rotura de tendón patelar', 'Rotura de tendón rotuliano', 'Rotura de tendón cuadricipital', 'Falla de reparación de tendón patelar', 'Falla de reparación de tendón cuadricipital', 'Insuficiencia del aparato extensor'],
     'Revisión protésica': ['Infección periprotésica', 'Aflojamiento aséptico de prótesis', 'Inestabilidad protésica', 'Desgaste de polietileno', 'Osteólisis periprotésica', 'Rigidez tras artroplastia', 'Otro motivo de revisión protésica'],
     'Artrosis': ['Gonartrosis', 'Artrosis femorotibial medial', 'Artrosis femorotibial lateral', 'Artrosis patelofemoral'],
     'Cartílago': ['Lesión condral', 'Lesión osteocondral', 'Osteocondritis disecante'],
@@ -128,6 +129,17 @@ BF.CONFIG = {
     'Fractura de tibia proximal: osteosíntesis',
     'Politrauma de rodilla',
     'Retiro de material de osteosíntesis',
+    // Aparato extensor
+    'Reparación / reinserción de tendón patelar',
+    'Reparación / reinserción de tendón cuadricipital',
+    'Revisión de reparación de tendón patelar',
+    'Revisión de reparación de tendón cuadricipital',
+    'Reconstrucción de tendón patelar',
+    'Reconstrucción de tendón cuadricipital',
+    'Reconstrucción del aparato extensor',
+    'Refuerzo / aumentación de reparación tendinosa',
+    'Tendón cuadricipital o rotuliano: reparación',
+    'Transferencia/avance de tendón',
     // Sinovial, infección y otros
     'Sinovectomía (artroscópica/abierta)',
     'Toilette articular por infección',
@@ -140,8 +152,6 @@ BF.CONFIG = {
     'Plicae sinovial / banda de Lannelongue',
     'Cuerpo libre intraarticular',
     'Bursectomía / quiste de Baker',
-    'Tendón cuadricipital o rotuliano: reparación',
-    'Transferencia/avance de tendón',
     'Biopsia articular / lesión tumoral',
     'Artrodesis / fijador externo',
     'Infiltración / procedimiento menor',
@@ -196,7 +206,8 @@ BF.CONFIG.procedureArea = (name) => {
     ['Artroscopia diagnóstica', 'Menisco'], ['Reconstrucción de LCA', 'Ligamentos'],
     ['Reconstrucción del ligamento patelofemoral medial (RLPFM / MPFL)', 'Patelofemoral'], ['Prótesis total de rodilla (PTR)', 'Artroplastia'],
     ['Osteotomía tibial alta (HTO)', 'Osteotomías'], ['Condroplastia / regularización', 'Cartílago'],
-    ['Fractura Fémur Distal', 'Fracturas'], ['Sinovectomía (artroscópica/abierta)', 'Otros']
+    ['Fractura Fémur Distal', 'Fracturas'], ['Reparación / reinserción de tendón patelar', 'Aparato extensor'],
+    ['Sinovectomía (artroscópica/abierta)', 'Otros']
   ];
   return boundaries.reverse().find(([first]) => index >= BF.CONFIG.PROCEDIMIENTOS.indexOf(first))[1];
 };

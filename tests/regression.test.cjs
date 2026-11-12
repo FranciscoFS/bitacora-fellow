@@ -32,6 +32,35 @@ function app({ choices = [], storageFails = false } = {}) {
 const caso = (id, patch = {}) => ({ id, codigo: id, fecha: '2026-10-01', procedimientoPrincipal: 'Reconstrucción de LCA', diagnostico: 'Caso ficticio', rol: 'Cirujano (supervisado)', lateralidad: 'Derecha', abordaje: 'Artroscópico', actualizado: '2026-10-01T12:00:00Z', ...patch });
 const json = (value) => JSON.parse(JSON.stringify(value));
 
+test('Aparato extensor conserva diagnósticos, procedimientos y registros anteriores', () => {
+  const { context, S, E } = app();
+  const C = context.BF.CONFIG;
+  for (const nombre of C.DIAGNOSTICOS['Aparato extensor']) {
+    assert.equal(C.diagnosisEntry(nombre).diagnosticoGrupo, 'Aparato extensor');
+  }
+  const procedures = ['Reparación / reinserción de tendón patelar', 'Reparación / reinserción de tendón cuadricipital',
+    'Revisión de reparación de tendón patelar', 'Revisión de reparación de tendón cuadricipital',
+    'Reconstrucción de tendón patelar', 'Reconstrucción de tendón cuadricipital',
+    'Reconstrucción del aparato extensor', 'Refuerzo / aumentación de reparación tendinosa',
+    'Tendón cuadricipital o rotuliano: reparación', 'Transferencia/avance de tendón'];
+  for (const procedure of procedures) {
+    assert.ok(C.PROCEDIMIENTOS_PRINCIPALES.includes(procedure));
+    assert.equal(C.procedureArea(procedure), 'Aparato extensor');
+  }
+  const nombre = 'Falla de reparación de tendón patelar';
+  S.add(caso('extensor', { diagnosticos: [{ nombre, grupo: 'Aparato extensor', tipo: nombre }],
+    procedimientoPrincipal: procedures[4], procedimientosAsociados: [procedures[7]] }));
+  S.add(caso('extensor-old', { diagnostico: 'Rotura de tendón rotuliano', diagnosticoGrupo: 'Otros',
+    diagnosticoTipo: 'Rotura de tendón rotuliano', procedimientoPrincipal: procedures[8] }));
+  const target = app();
+  target.E.applyImport(target.E.previewImport(json(S.packageData())), 'replace');
+  assert.equal(target.S.get('extensor').diagnosticos[0].grupo, 'Aparato extensor');
+  assert.equal(target.S.get('extensor-old').diagnosticos[0].grupo, 'Otros');
+  assert.equal(target.S.get('extensor-old').procedimientoPrincipal, procedures[8]);
+  assert.ok(E.toCsv(S.all()).includes(nombre));
+  assert.equal(C.procedureArea('Sinovectomía (artroscópica/abierta)'), 'Otros');
+});
+
 test('El catálogo ampliado distingue discoide, tallado y motivos múltiples de revisión', () => {
   const {context,S,E}=app(), C=context.BF.CONFIG;
   assert.ok(C.DIAGNOSTICOS.Menisco.includes('Menisco lateral discoide'));
